@@ -168,7 +168,7 @@ define(templates, function (assignTpl, submissionsTpl) {
                         // In this case, we would need additional information (like pre-fetching the course participants).
                         MM.plugins.participants._loadParticipants(assign.course, 0, 0,
                             function(users) {
-
+								
                                 // Recover the users who has made submissions, we need to retrieve the full information later.
                                 var userIds = [];
                                 data.submissions.forEach(function(sub) {
@@ -215,27 +215,27 @@ define(templates, function (assignTpl, submissionsTpl) {
             var html = MM.tpl.render(MM.plugins.assign.templates.submissions.html, data);
             MM.panels.show("right", html, {title: pageTitle});
 
-			
-						
+
 			//-----------------------\\
 			// /!\ ADD BY STUDENT /!\ 
-			
+			if($(".assign-download").length<2){
+				$("#download_all_files").hide();
+			}
 			
 			//TO DOWNLOAD EVERYTHING
             $("#download_all_files").on(MM.clickType, function(e) {
                 e.preventDefault();
                 e.stopPropagation();
 
-				$(".assign-download").each(function(){
+				$(".bd > .assign-download").each(function(){
 				    var url = $(this).data("downloadurl");
 					var filename = $(this).data("filename");
 					var attachmentId = $(this).data("attachmentid");
-					alert(url);
-					alert(filename);
-					alert(attachmentId);
 					MM.plugins.assign._downloadFile(url, filename, attachmentId);
-					alert("ok");
 				})
+
+
+				alert("Devoirs téléchargés avec succès !");
 
             });
 			
