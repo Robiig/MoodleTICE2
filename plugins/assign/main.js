@@ -231,7 +231,7 @@ define(templates, function (assignTpl, submissionsTpl) {
 				    var url = $(this).data("downloadurl");
 					var filename = $(this).data("filename");
 					var attachmentId = $(this).data("attachmentid");
-					MM.plugins.assign._downloadFile(url, filename, attachmentId);
+					MM.plugins.assign._downloadFile(url, filename, attachmentId,false);
 				})
 
 
@@ -254,7 +254,7 @@ define(templates, function (assignTpl, submissionsTpl) {
                 var filename = $(this).data("filename");
                 var attachmentId = $(this).data("attachmentid");
 
-                MM.plugins.assign._downloadFile(url, filename, attachmentId);
+                MM.plugins.assign._downloadFile(url, filename, attachmentId,true);
             });
 
             // View submission texts.
@@ -324,7 +324,7 @@ define(templates, function (assignTpl, submissionsTpl) {
             return files;
         },
 
-        _downloadFile: function(url, filename, attachmentId) {
+        _downloadFile: function(url, filename, attachmentId, one_file) {
             // Add the token.
             var downloadURL = MM.fixPluginfile(url);
             var siteId = MM.config.current_site.id;
@@ -365,8 +365,11 @@ define(templates, function (assignTpl, submissionsTpl) {
                                 $(linkCssId).off(MM.clickType);
 
                                 // Android, open in new browser
-                                MM.handleFiles(linkCssId);
-                                MM._openFile(fullpath);
+								if(one_file){
+								
+									MM.handleFiles(linkCssId);
+									MM._openFile(fullpath);
+								}
 
                             },
                             function(fullpath) {
