@@ -248,7 +248,7 @@ define(templates, function (assignTpl, submissionsTpl) {
             $(".assign-download", "#panel-right").on(MM.clickType, function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-				alert('test');
+
                 var url = $(this).data("downloadurl");
                 var filename = $(this).data("filename");
                 var attachmentId = $(this).data("attachmentid");
@@ -379,17 +379,17 @@ define(templates, function (assignTpl, submissionsTpl) {
 					
 					
 					
-					directory = siteId + "/feedback-files/" + attachmentId;
-					filePath = directory + "/" + filename;
-					 MM.log("Starting download of Moodle file in Feedback directory: " + downloadURL);
+					var directory2 = siteId + "/feedback-files/" + attachmentId;
+					var filePath2 = directory2 + "/" + filename;
+					 MM.log("Starting download of Moodle file in Feedback directory2: " + downloadURL);
                     // All the functions are asynchronous, like createDir.
-                    MM.fs.createDir(directory, function() {
-                        MM.log("Downloading Moodle file to " + filePath + " from URL: " + downloadURL);
+                    MM.fs.createDir(directory2, function() {
+                        MM.log("Downloading Moodle file to " + filePath2 + " from URL: " + downloadURL);
 
                      
 						
 						//Pour télécharger dans dossier feedback 
-                        MM.moodleDownloadFile(downloadURL, filePath,
+                        MM.moodleDownloadFile(downloadURL, filePath2,
                             function(fullpath) {
                                 MM.log("Download of content finished " + fullpath + " URL: " + downloadURL);
 

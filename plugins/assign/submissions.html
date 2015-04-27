@@ -137,6 +137,14 @@
                             <% } %>
                             <div class="attachment media">
                                 <div class="content-actions app-icon">
+								
+								<% if (file.localpath) { %>
+								<a href="<%= file.localpath %>">
+									<img id="feedimg-<%= file.id %>" src="http://www.evangile.ca/outils/ClipArts/Bureau/original/crayon.png" class="edit-feedback"/>
+								</a>
+								 <% } %>
+								
+								
                                     <img id="downimg-<%= file.id %>" src="img/<%= dImg %>.png" class="assign-download" data-downloadurl="<%= file.fileurl %>" data-filename="<%= file.filepath %>" data-attachmentid="<%= file.id %>">
                                 </div>
                                 <div class="content-name">
