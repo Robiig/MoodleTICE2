@@ -218,6 +218,8 @@ define(templates, function (assignTpl, submissionsTpl) {
 
 			//-----------------------\\
 			// /!\ ADD BY STUDENT /!\ 
+			
+			//if less than 2 submissions files, hide all download button
 			if($(".assign-download").length<2){
 				$("#download_all_files").hide();
 			}
@@ -246,7 +248,7 @@ define(templates, function (assignTpl, submissionsTpl) {
             $(".assign-download", "#panel-right").on(MM.clickType, function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-
+alert('test');
                 var url = $(this).data("downloadurl");
                 var filename = $(this).data("filename");
                 var attachmentId = $(this).data("attachmentid");
@@ -360,10 +362,7 @@ define(templates, function (assignTpl, submissionsTpl) {
                                 };
                                 MM.db.insert("assign_files", file);
 
-                                $(downCssId).remove();
-                                $(linkCssId).attr("href", fullpath);
-                                $(linkCssId).attr("rel", "external");
-                                // Remove class and events.
+
 
 
 
@@ -387,7 +386,7 @@ define(templates, function (assignTpl, submissionsTpl) {
                     MM.fs.createDir(directory, function() {
                         MM.log("Downloading Moodle file to " + filePath + " from URL: " + downloadURL);
 
-                        $(downCssId).attr("src", "img/loadingblack.gif");
+                     
 						
 						//Pour télécharger dans dossier feedback 
                         MM.moodleDownloadFile(downloadURL, filePath,
