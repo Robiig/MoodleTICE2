@@ -248,7 +248,7 @@ define(templates, function (assignTpl, submissionsTpl) {
             $(".assign-download", "#panel-right").on(MM.clickType, function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-alert('test');
+				alert('test');
                 var url = $(this).data("downloadurl");
                 var filename = $(this).data("filename");
                 var attachmentId = $(this).data("attachmentid");
