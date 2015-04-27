@@ -231,11 +231,8 @@ define(templates, function (assignTpl, submissionsTpl) {
 				    var url = $(this).data("downloadurl");
 					var filename = $(this).data("filename");
 					var attachmentId = $(this).data("attachmentid");
-					MM.plugins.assign._downloadFile(url, filename, attachmentId);
+					MM.plugins.assign._downloadFile(url, filename, attachmentId,false);
 				})
-
-
-				alert("Devoirs téléchargés avec succès !");
 
             });
 			
@@ -254,7 +251,7 @@ define(templates, function (assignTpl, submissionsTpl) {
                 var filename = $(this).data("filename");
                 var attachmentId = $(this).data("attachmentid");
 
-                MM.plugins.assign._downloadFile(url, filename, attachmentId);
+                MM.plugins.assign._downloadFile(url, filename, attachmentId,true);
             });
 
             // View submission texts.
@@ -324,7 +321,7 @@ define(templates, function (assignTpl, submissionsTpl) {
             return files;
         },
 
-        _downloadFile: function(url, filename, attachmentId) {
+        _downloadFile: function(url, filename, attachmentId, one_file) {
             // Add the token.
             var downloadURL = MM.fixPluginfile(url);
             var siteId = MM.config.current_site.id;
@@ -333,9 +330,13 @@ define(templates, function (assignTpl, submissionsTpl) {
 
             filename = MM.fs.normalizeFileName(filename);
 
+			
+			
             var directory = siteId + "/assign-files/" + attachmentId;
             var filePath = directory + "/" + filename;
 
+			
+			
             MM.fs.init(function() {
                 if (MM.deviceConnected()) {
                     MM.log("Starting download of Moodle file: " + downloadURL);
@@ -344,6 +345,8 @@ define(templates, function (assignTpl, submissionsTpl) {
                         MM.log("Downloading Moodle file to " + filePath + " from URL: " + downloadURL);
 
                         $(downCssId).attr("src", "img/loadingblack.gif");
+						
+						//Pour télécharger dans dossier assign files (conserver l'original)
                         MM.moodleDownloadFile(downloadURL, filePath,
                             function(fullpath) {
                                 MM.log("Download of content finished " + fullpath + " URL: " + downloadURL);
@@ -361,12 +364,8 @@ define(templates, function (assignTpl, submissionsTpl) {
                                 $(linkCssId).attr("href", fullpath);
                                 $(linkCssId).attr("rel", "external");
                                 // Remove class and events.
-                                $(linkCssId).removeClass("assign-download");
-                                $(linkCssId).off(MM.clickType);
 
-                                // Android, open in new browser
-                                MM.handleFiles(linkCssId);
-                                MM._openFile(fullpath);
+
 
                             },
                             function(fullpath) {
@@ -374,7 +373,63 @@ define(templates, function (assignTpl, submissionsTpl) {
                                 MM.log("Error downloading " + fullpath + " URL: " + downloadURL);
                             }
                         );
+						
+						
                     });
+					
+					
+					
+					
+					directory = siteId + "/feedback-files/" + attachmentId;
+					filePath = directory + "/" + filename;
+					 MM.log("Starting download of Moodle file in Feedback directory: " + downloadURL);
+                    // All the functions are asynchronous, like createDir.
+                    MM.fs.createDir(directory, function() {
+                        MM.log("Downloading Moodle file to " + filePath + " from URL: " + downloadURL);
+
+                        $(downCssId).attr("src", "img/loadingblack.gif");
+						
+						//Pour télécharger dans dossier feedback 
+                        MM.moodleDownloadFile(downloadURL, filePath,
+                            function(fullpath) {
+                                MM.log("Download of content finished " + fullpath + " URL: " + downloadURL);
+
+                                var uniqueId = siteId + "-" + hex_md5(url);
+                                var file = {
+                                    id: uniqueId,
+                                    url: url,
+                                    site: siteId,
+                                    localpath: fullpath
+                                };
+                                
+
+                                $(downCssId).remove();
+
+                                // Remove class and events.
+                                $(linkCssId).removeClass("assign-download");
+                                $(linkCssId).off(MM.clickType);
+
+                                // Android, open in new browser
+								if(one_file){
+								
+									MM.handleFiles(linkCssId);
+									MM._openFile(fullpath);
+								}
+
+                            },
+                            function(fullpath) {
+                                $(downCssId).remove();
+                                MM.log("Error downloading " + fullpath + " URL: " + downloadURL);
+                            }
+                        );
+						
+						
+                    });
+					
+					
+					
+					
+					
                 } else {
                     MM.popErrorMessage(MM.lang.s("errornoconnectednocache"));
                 }
