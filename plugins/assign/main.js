@@ -239,7 +239,13 @@ define(templates, function (assignTpl, submissionsTpl) {
             });
 			
 			
-			
+			$(".edit-feedback").on(MM.clickType, function(e) {
+				var pathAssign = $(this).data("filepath");
+				var pathFeedback = pathAssign.replace('assign-files', 'feedback-files');
+					MM.handleFiles(linkCssId);
+					MM._openFile(pathFeedback);
+				
+            });
 			//__________________________\\
 			
 			
@@ -362,10 +368,6 @@ define(templates, function (assignTpl, submissionsTpl) {
                                 };
                                 MM.db.insert("assign_files", file);
 
-
-
-
-
                             },
                             function(fullpath) {
                                 $(downCssId).remove();
@@ -393,14 +395,6 @@ define(templates, function (assignTpl, submissionsTpl) {
                             function(fullpath) {
                                 MM.log("Download of content finished " + fullpath + " URL: " + downloadURL);
 
-                                var uniqueId = siteId + "-" + hex_md5(url);
-                                var file = {
-                                    id: uniqueId,
-                                    url: url,
-                                    site: siteId,
-                                    localpath: fullpath
-                                };
-                                
 
                                 $(downCssId).remove();
 
