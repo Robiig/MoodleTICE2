@@ -242,8 +242,7 @@ define(templates, function (assignTpl, submissionsTpl) {
 			$(".edit-feedback").on(MM.clickType, function(e) {
 				var pathAssign = $(this).data("filepath");
 				var pathFeedback = pathAssign.replace('assign-files', 'feedback-files');
-					MM.handleFiles(linkCssId);
-					MM._openFile(pathFeedback);
+				MM._openFile(pathFeedback);
 				
             });
 			//__________________________\\
