@@ -102,19 +102,37 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
 							MM.plugins.participants.showParticipants(courseId);
 							
 							//link participants to grades
-							$(".users-index-list .nav .nav-item a").each(function(){
-								var ref = this.href.split("index.html")[1];
-								ref = ref.replace("participant","course/grades/user");
-								ref+= "/1";
-								$(this).attr("href", ref);			
-							});
 							
-							//if device is tablet, load first user's grades
-							if (MM.deviceType == "tablet" && $(".users-index-list .nav .nav-item").length > 0)
-								MM.plugins.grades.loadGradesTable(courseId, MM.config.current_site.userid,1);
+							setTimeout(
+								function () {
+									$(".users-index-list .nav .nav-item a").each(function(){
+										var ref = this.href.split("index.html")[1];
+										ref = ref.replace("participant","course/grades/user");
+										ref+= "/1";
+										$(this).attr("href", ref);		
+
+									});
+									
+
+									
+									//if device is tablet, load first user's grades
+									if (MM.deviceType == "tablet" && $(".users-index-list .nav .nav-item").length > 0)
+										MM.plugins.grades.loadGradesTable(courseId, MM.config.current_site.userid,1);
+										
+									//hide back-arrow
+									$(".back-row a").hide();
+									
+									
+									//end of loading
+									$(menuEl, '#panel-left').removeClass('loading-row');
+									
+									},
+									250
+
+							);
+
 								
-							//end of loading
-							$(menuEl, '#panel-left').removeClass('loading-row');
+
 						}
 						
 						else						
