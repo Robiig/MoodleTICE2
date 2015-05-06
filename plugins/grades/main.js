@@ -122,7 +122,7 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
 											//hide back-arrow
 											$(".back-row a").hide();
 											
-											},1)
+											},100)
 										
 									});
 									
