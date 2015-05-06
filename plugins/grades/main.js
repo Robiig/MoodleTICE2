@@ -112,8 +112,19 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
 										$(this).attr("href", ref);		
 
 									});
-									
 
+							
+									$(".users-index-list .nav .nav-item a").on(MM.clickType,function(e){
+									
+										setTimeout(
+											function () {
+
+											//hide back-arrow
+											$(".back-row a").hide();
+											
+											},1)
+										
+									});
 									
 									//if device is tablet, load first user's grades
 									if (MM.deviceType == "tablet" && $(".users-index-list .nav .nav-item").length > 0)
@@ -127,9 +138,11 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
 									$(menuEl, '#panel-left').removeClass('loading-row');
 									
 									},
-									250
+									500
 
 							);
+
+									
 
 								
 
