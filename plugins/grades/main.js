@@ -17,7 +17,8 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
 
         routes: [
             ["course/grades/:courseid", "course_grades_activities", "viewActivities"],
-            ["course/grades/user/:courseid/:userid/:popup", "course_grades_user", "loadGradesTable"]
+            ["course/grades/user/:courseid/:userid/:popup", "course_grades_user", "loadGradesTable"],
+			["course/grades/user/:courseid/:userid/:popup/:withbackarrow", "course_grades_user", "loadGradesTable"]
         ],
 
         wsName: "",
@@ -99,53 +100,8 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
 						if(canSeeAllGrades){
 							//allowed access
 							
-							MM.plugins.participants.showParticipants(courseId);
+							MM.plugins.participants.showParticipants(courseId,1);
 							
-							//link participants to grades
-							
-							setTimeout(
-								function () {
-									$(".users-index-list .nav .nav-item a").each(function(){
-										var ref = this.href.split("index.html")[1];
-										ref = ref.replace("participant","course/grades/user");
-										ref+= "/1";
-										$(this).attr("href", ref);		
-
-									});
-
-							
-									$(".users-index-list .nav .nav-item a").on(MM.clickType,function(e){
-									
-										setTimeout(
-											function () {
-
-											//hide back-arrow
-											$(".back-row a").hide();
-											
-											},100)
-										
-									});
-									
-									//if device is tablet, load first user's grades
-									if (MM.deviceType == "tablet" && $(".users-index-list .nav .nav-item").length > 0)
-										MM.plugins.grades.loadGradesTable(courseId, MM.config.current_site.userid,1);
-										
-									//hide back-arrow
-									$(".back-row a").hide();
-									
-									
-									//end of loading
-									$(menuEl, '#panel-left').removeClass('loading-row');
-									
-									},
-									500
-
-							);
-
-									
-
-								
-
 						}
 						
 						else						
@@ -312,10 +268,11 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
             return html;
         },
 
-        loadGradesTable: function(courseId, userId, popUp) {
+        loadGradesTable: function(courseId, userId, popUp, withoutbackarrow) {
             var menuEl = 'a[href="#course/grades/' + courseId + '"]';
             popUp = popUp || false;
-
+			withoutbackarrow = withoutbackarrow || false;
+			
             var data = {
                 "courseid" : courseId,
                 "userid"   : userId
@@ -328,7 +285,8 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
                     var tpl = {
                         table: MM.plugins.grades._createTable(table),
                         course: course.toJSON(),
-                        popUp: popUp
+                        popUp: popUp,
+						withoutbackarrow: withoutbackarrow
                     };
 
                     var html = MM.tpl.render(MM.plugins.grades.templates.gradesTable.html, tpl);

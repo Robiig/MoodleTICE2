@@ -1,4 +1,7 @@
-<% if (popUp) { %>
+<% if (typeof withoutbackarrow === "undefined") { %>
+	<%	withbackarrow = false %>
+<% } %>
+<% if (popUp && !withoutbackarrow ) { %>
 <div class="back-row">
     <a onclick="window.history.back();"><img src="img/arrowleft.png"></a>
 </div>

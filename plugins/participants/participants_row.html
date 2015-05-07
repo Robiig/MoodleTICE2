@@ -1,6 +1,17 @@
+<% if (typeof linkToGrades === "undefined") { %>
+	<%	linkToGrades = 0 %>
+<% } %>
+
 <% _.each(users, function(user) { %>
-<li class="nav-item">
-    <a href="#participant/<%= courseId %>/<%= user.id %>" class="media touch-row">
+	<li class="nav-item">
+	
+	<% if (linkToGrades){ %>
+		<a href="#course/grades/user/<%= courseId %>/<%= user.id %>/1/0" class="media touch-row">
+	<% } %>
+
+	<% if (!linkToGrades){ %>	
+		<a href="#participant/<%= courseId %>/<%= user.id %>" class="media touch-row">
+	<% } %>
         <div class="img">
             <img src="<%= user.profileimageurlsmall %>" alt="img">
         </div>
@@ -8,5 +19,6 @@
           <p><%= user.fullname %></p>
         </div>
     </a>
+	
 </li>
 <% }); %>

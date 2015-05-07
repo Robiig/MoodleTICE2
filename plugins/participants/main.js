@@ -2,10 +2,12 @@ var templates = [
     "root/externallib/text!root/plugins/participants/participants.html",
     "root/externallib/text!root/plugins/participants/participant.html",
     "root/externallib/text!root/plugins/participants/participants_row.html",
+	"root/externallib/text!root/plugins/participants/participants_grades.html",
+	"root/externallib/text!root/plugins/participants/participants_grades_row.html",
     "root/externallib/text!root/plugins/participants/countries.json"
 ];
 
-define(templates,function (participantsTpl, participantTpl, participantsRowTpl, countriesJSON) {
+define(templates,function (participantsTpl, participantTpl, participantsRowTpl, participantsGradesTpl, participantsGradesRowTpl,countriesJSON) {
     var plugin = {
         settings: {
             name: "participants",
@@ -30,12 +32,17 @@ define(templates,function (participantsTpl, participantTpl, participantsRowTpl, 
 
         limitNumber: 100,
 
-        showParticipants: function(courseId) {
+		
+		//linkToGrades is boolean. true=> show immediately student's grades (used by teacher to look at student's marks) 
+        showParticipants: function(courseId, linkToGrades) {
+			linkToGrades = linkToGrades || 0;
             MM.panels.showLoading('center');
 
             if (MM.deviceType == "tablet") {
                 MM.panels.showLoading('right');
             }
+			
+			if(!linkToGrades)
             // Adding loading icon.
             $('a[href="#participants/' +courseId+ '"]').addClass('loading-row');
 
@@ -55,10 +62,12 @@ define(templates,function (participantsTpl, participantTpl, participantsRowTpl, 
                         users: users,
                         deviceType: MM.deviceType,
                         courseId: courseId,
-                        showMore: showMore
+                        showMore: showMore,
+						linkToGrades: linkToGrades
                     };
-                    var html = MM.tpl.render(MM.plugins.participants.templates.participants.html, tpl);
-
+				
+					var html = MM.tpl.render(MM.plugins.participants.templates.participants.html, tpl);
+						
                     var course = MM.db.get("courses", MM.config.current_site.id + "-" + courseId);
                     var pageTitle = "";
 
@@ -67,11 +76,16 @@ define(templates,function (participantsTpl, participantTpl, participantsRowTpl, 
                     }
 
                     MM.panels.show('center', html, {title: pageTitle});
+					
 
+					
                     // Load the first user
                     if (MM.deviceType == "tablet" && users.length > 0) {
                         $("#panel-center li:eq(0)").addClass("selected-row");
-                        MM.plugins.participants.showParticipant(courseId, users.shift().id);
+						if(linkToGrades)
+							MM.plugins.grades.loadGradesTable(courseId, users.shift().id,1,1);
+						else	
+							MM.plugins.participants.showParticipant(courseId, users.shift().id);
                         $("#panel-center li:eq(0)").addClass("selected-row");
                     }
 
@@ -101,7 +115,11 @@ define(templates,function (participantsTpl, participantTpl, participantsRowTpl, 
                                 MM.plugins.participants.nextLimitFrom += MM.plugins.participants.limitNumber;
 
                                 var tpl = {courseId: courseId, users: users};
-                                var newUsers = MM.tpl.render(MM.plugins.participants.templates.participantsRow.html, tpl);
+								var newUsers;
+								if(linkToGrades)
+									newUsers = MM.tpl.render(MM.plugins.participants.templates.participantsRowGrades.html, tpl);
+								else	
+									newUsers = MM.tpl.render(MM.plugins.participants.templates.participantsRow.html, tpl);
                                 $("#participants-additional").append(newUsers);
                                 if (users.length < MM.plugins.participants.limitNumber) {
                                     that.css("display", "none");
@@ -111,10 +129,16 @@ define(templates,function (participantsTpl, participantTpl, participantsRowTpl, 
                                 that.removeClass("loading-row-black");
                             }
                         );
+						
+
+						
                     });
+					if (linkToGrades)
+						$('a[href="#course/grades/' +courseId+ '"]').removeClass('loading-row');
 
                 }, function(m) {
                     // Removing loading icon.
+					
                     $('a[href="#participants/' +courseId+ '"]').removeClass('loading-row');
                     if (typeof(m) !== "undefined" && m) {
                         MM.popErrorMessage(m);
@@ -215,6 +239,12 @@ define(templates,function (participantsTpl, participantTpl, participantsRowTpl, 
             },
             "participantsRow": {
                 html: participantsRowTpl
+            },
+			"participantsGrades": {
+                html: participantsGradesTpl
+            },
+			"participantsGradesRow": {
+                html: participantsGradesRowTpl
             },
             "countries": {
                 json: countriesJSON
