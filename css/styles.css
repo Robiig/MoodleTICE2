@@ -256,6 +256,12 @@ hr {
   background-position: 92% 50%;
   background-size: 16px;
 }
+
+
+.users-index-list .nav-item:hover {
+  background-color: rgb(251, 236, 183);
+}
+
 .touch-row {
   min-height: 42px;
 }
