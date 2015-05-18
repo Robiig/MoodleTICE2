@@ -17,8 +17,8 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
 
         routes: [
             ["course/grades/:courseid", "course_grades_activities", "viewActivities"],
-            ["course/grades/user/:courseid/:userid/:popup", "course_grades_user", "loadGradesTable"],
-			["course/grades/user/:courseid/:userid/:popup/:withbackarrow", "course_grades_user", "loadGradesTable"]
+            ["course/grades/user/:courseid/:userid", "course_grades_user", "loadGradesTable"],
+			["course/grades/user/:courseid/:userid/:popUp", "course_grades_user", "loadGradesTable"]
         ],
 
         wsName: "",
@@ -100,7 +100,7 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
 						if(canSeeAllGrades){
 							//allowed access
 							
-							MM.plugins.participants.showParticipants(courseId,1);
+							MM.plugins.grades.showParticipants(courseId);
 							
 						}
 						
@@ -268,11 +268,9 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
             return html;
         },
 
-        loadGradesTable: function(courseId, userId, popUp, withoutbackarrow) {
+        loadGradesTable: function(courseId, userId, popUp) {
             var menuEl = 'a[href="#course/grades/' + courseId + '"]';
-            popUp = popUp || false;
-			withoutbackarrow = withoutbackarrow || false;
-			
+			var popUp = popUp || 0;
             var data = {
                 "courseid" : courseId,
                 "userid"   : userId
@@ -281,23 +279,24 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
             MM.moodleWSCall(MM.plugins.grades.wsName, data,
                 function(table) {
                     var course = MM.db.get("courses", MM.config.current_site.id + "-" + courseId);
-
+					
                     var tpl = {
                         table: MM.plugins.grades._createTable(table),
                         course: course.toJSON(),
-                        popUp: popUp,
-						withoutbackarrow: withoutbackarrow
+						popUp: popUp || MM.deviceType == "phone"
                     };
 
                     var html = MM.tpl.render(MM.plugins.grades.templates.gradesTable.html, tpl);
 
                     // Display as popup in the right side (from participants page).
-                    if (popUp) {
-                        MM.panels.show("right", html, {keepTitle: true});
-                    } else {
-                        $(menuEl, '#panel-left').removeClass('loading-row');
-                        MM.panels.show("center", html, {title: MM.util.formatText(course.get("fullname")), hideRight: true});
-                    }
+					
+            if ( MM.deviceType == "tablet" || popUp) {
+				MM.panels.show('right', html, {});
+			} else {
+				$(menuEl, '#panel-left').removeClass('loading-row');
+				MM.panels.show("center", html, {title: MM.util.formatText(course.get("fullname")), hideRight: true});
+			}
+
                 },
                 {},
                 function(e) {
@@ -515,6 +514,108 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
                 }
             );
 
+        },
+		showParticipants: function(courseId) {
+
+            MM.panels.showLoading('center');
+
+            if (MM.deviceType == "tablet") {
+                MM.panels.showLoading('right');
+            }
+
+            MM.plugins.participants._loadParticipants(courseId, 0, MM.plugins.participants.limitNumber,
+                function(users) {
+                    // Removing loading icon.
+                    $('a[href="#participants/' +courseId+ '"]').removeClass('loading-row');
+
+                    var showMore = true;
+                    if (users.length < MM.plugins.participants.limitNumber) {
+                        showMore = false;
+                    }
+
+                    MM.plugins.participants.nextLimitFrom = MM.plugins.participants.limitNumber;
+
+                    var tpl = {
+                        users: users,
+                        deviceType: MM.deviceType,
+                        courseId: courseId,
+                        showMore: showMore,
+						linkToGrades: 1,
+                    };
+
+					var html = MM.tpl.render(MM.plugins.participants.templates.participants.html, tpl);
+						
+                    var course = MM.db.get("courses", MM.config.current_site.id + "-" + courseId);
+                    var pageTitle = "";
+
+                    if (course) {
+                        pageTitle = course.get("shortname");;
+                    }
+
+                    MM.panels.show('center', html, {title: pageTitle});
+					
+
+					
+                    // Load the first user
+                    if (MM.deviceType == "tablet" && users.length > 0) {
+                        $("#panel-center li:eq(0)").addClass("selected-row");
+						MM.plugins.grades.loadGradesTable(courseId, users.shift().id);
+                        $("#panel-center li:eq(0)").addClass("selected-row");
+                    }
+
+                    // Save the users in the users table.
+                    var newUser;
+                    users.forEach(function(user) {
+                        newUser = {
+                            'id': MM.config.current_site.id + '-' + user.id,
+                            'userid': user.id,
+                            'fullname': user.fullname,
+                            'profileimageurl': user.profileimageurl
+                        };
+                        MM.db.insert('users', newUser);
+                    });
+
+                    // Show more button.
+                    $("#participants-showmore").on(MM.clickType, function(e) {
+                        var that = $(this);
+                        $(this).addClass("loading-row-black");
+
+                        MM.plugins.participants._loadParticipants(
+                            courseId,
+                            MM.plugins.participants.nextLimitFrom,
+                            MM.plugins.participants.limitNumber,
+                            function(users) {
+                                that.removeClass("loading-row-black");
+                                MM.plugins.participants.nextLimitFrom += MM.plugins.participants.limitNumber;
+
+                                var tpl = {courseId: courseId, users: users, linkToGrades: 1};
+								var newUsers;
+									newUsers = MM.tpl.render(MM.plugins.participants.templates.participantsRow.html, tpl);
+                                $("#participants-additional").append(newUsers);
+                                if (users.length < MM.plugins.participants.limitNumber) {
+                                    that.css("display", "none");
+                                }
+                            },
+                            function() {
+                                that.removeClass("loading-row-black");
+                            }
+                        );
+						
+
+						
+                    });
+					
+					$('a[href="#course/grades/' +courseId+ '"]').removeClass('loading-row');
+
+                }, function(m) {
+                    // Removing loading icon.
+					
+                    $('a[href="#participants/' +courseId+ '"]').removeClass('loading-row');
+                    if (typeof(m) !== "undefined" && m) {
+                        MM.popErrorMessage(m);
+                    }
+                }
+            );
         },
 
         _findImage: function(text) {

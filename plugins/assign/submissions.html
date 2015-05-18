@@ -97,7 +97,6 @@
 				<div id="all-files">
 				
 					<a id="download_all_files" href="#"> Tout télécharger </a>
-					<p> test numero 5</p>
 				</div>
 			</center>
 			
@@ -140,8 +139,8 @@
 								
 								<% if (file.localpath) { %>
 								
-									<img id="feedimg-<%= file.id %>" src="http://www.evangile.ca/outils/ClipArts/Bureau/original/crayon.png" class="edit-feedback" data-filepath="<%=file.localpath%>">
-						
+									<img id="feedimg-<%= file.id %>" src="http://www.evangile.ca/outils/ClipArts/Bureau/original/crayon.png" class="grading-user" data-userid="<%=user.userid%>" data-cmid="<%=assign.cmid%>" data-courseid="<%=assign.course%>" >
+					
 								 <% } %>
 								
 								

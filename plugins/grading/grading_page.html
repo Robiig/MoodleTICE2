@@ -1,0 +1,99 @@
+<% if(device == "phone") { %>
+	<div class="header-sub">
+
+		<div class="back-row">
+			
+				<a onclick="window.history.back();"><img src="img/arrowleft.png"></a>
+			
+		</div>
+		<div id="back-arrow-title" class="media">
+			<div class="img app-ico">
+				<img src="img/mod/assign.png" alt="img">
+			</div>
+			<div class="bd">
+				<h2><%= MM.util.formatText(assign.name)%></h2>
+			</div>
+		</div>
+	</div>
+<% } %>	
+<div class="content-index">
+    <div class="path-mod-assign">
+
+
+        <% if (canviewsubmissions) { %>
+		
+		<center>
+        <h3><%= MM.lang.s('submissions') %> </h3>
+		</center>
+        <% _.each(submissions, function(submission) { %>
+		
+		<% if(submission.userid == user.userid) { %>
+
+            <div class="post" data-assignsubmission="<%= submission.submission %>">
+                <div class="header">
+                    <img class="user-picture" src="<%= MM.util.getMoodleFilePath(user.profileimageurl) %>">
+                    <a class="author-name" href="#participant/<%= assign.course %>/<%= submission.userid %>/1" rel="author"><%= user.fullname %></a>
+                    <time><%= MM.util.timestampToUserDate(submission.timemodified) %></time>
+
+                </div>
+                <div class="content">
+              
+
+                    <% var text = MM.plugins.assign._getSubmissionText(submission); %>
+                    <% var files = MM.plugins.assign._getSubmissionFiles(submission); %>
+
+                    <% if (text != '') { %>
+                        <p><a href="#" class="submissiontext" data-submissionid="<%= submission.id %>"><%= MM.lang.s('viewsubmission') %></a></p>
+                    <% } %>
+
+                    <% if (files.length > 0) { %>
+
+                        <div class="attachments">
+						
+                            <% _.each(files, function(file) { %>
+                            <% if (file.localpath) { %>
+                                <% var dImg = "reloadgrey"; %>
+                                <% } else { %>
+                                <% var dImg = "download"; %>
+                            <% } %>
+                            <div class="attachment media">
+                                <div class="content-actions app-icon">			
+                                    <img id="downimg-<%= file.id %>" src="img/<%= dImg %>.png" class="assign-download" data-downloadurl="<%= file.fileurl %>" data-filename="<%= file.filepath %>" data-attachmentid="<%= file.id %>">
+                                </div>
+                                <div class="content-name">
+                                    <div class="img app-ico">
+                                        <img src="img/files/<%= file.icon %>" alt="img">
+                                    </div>
+                                    <div class="bd">
+                                        <% if (!file.localpath) { %>
+                                        <a id="file-<%= file.id %>" class="assign-download" href="#" data-downloadurl="<%= file.fileurl %>" data-filename="<%= file.filepath %>" data-attachmentid="<%= file.id %>">
+                                            <%= file.filepath %>
+                                        </a>
+                                        <% } else { %>
+                                        <a id="file-<%= file.id %>" href="<%= file.localpath %>" rel="external"
+                                            ><%= file.filepath %>
+                                        </a>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <% }); %>
+                        </div>
+
+                    <% } else if  (text == ''){ %>
+						<span><%= MM.lang.s('nosubmissions') %></span>
+					<% } %>
+					
+
+                </div>
+            </div>
+			
+        <% }}); %>
+        <% } else { %>
+            <div class="centered">
+                <a href="<%= activityLink %>" target="_blank"><button><%= MM.lang.s('addsubmission') %></button></a>
+            </div>
+        <% } %>
+    </div>
+</div>

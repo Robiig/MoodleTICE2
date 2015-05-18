@@ -239,10 +239,11 @@ define(templates, function (assignTpl, submissionsTpl) {
             });
 			
 			
-			$(".edit-feedback").on(MM.clickType, function(e) {
-				var pathAssign = $(this).data("filepath");
-				var pathFeedback = pathAssign.replace('assign-files', 'feedback-files');
-				MM._openFile(pathFeedback);
+			$(".grading-user").on(MM.clickType, function(e) {
+				var courseId = $(this).data("courseid");
+				var moduleId = $(this).data("cmid");
+				var userId = $(this).data("userid");
+				MM.plugins.grading.viewActivities(courseId, moduleId, userId);
 				
             });
 			//__________________________\\

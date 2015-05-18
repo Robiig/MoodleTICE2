@@ -3,11 +3,14 @@
             <input type="search" results="5" placeholder="Search...">
         </form>-->
         <ul class="nav nav-v">
-				<% if (typeof linkToGrades === "undefined") { %>
-					<%	linkToGrades = 0 %>
-				<% } %>
+			<% if (typeof linkToGrades === "undefined") { %>
+				<%	linkToGrades = 0 %>
+			<% } %>
+			<% if (typeof moduleId === "undefined") { %>
+				<%	moduleId = -1 %>
+			<% } %>
 				
-				<%= MM.tpl.render(MM.plugins.participants.templates.participantsRow.html, {"courseId": courseId, "users": users, "linkToGrades": linkToGrades}) %>
+				<%= MM.tpl.render(MM.plugins.participants.templates.participantsRow.html, {"courseId": courseId, "users": users, "linkToGrades": linkToGrades, "moduleId": moduleId}) %>
         </ul>
         <ul id="participants-additional" class="nav nav-v">
 

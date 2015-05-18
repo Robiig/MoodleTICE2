@@ -160,6 +160,7 @@
 "noevents": "There are no events",
 "nomessagesfound": "No messages were found",
 "norefreshdisconnected": "The refresh option requires network connection",
+"nosubmissions": "No submissions",
 "notaskstobesynchronized": "No tasks to be synchronized",
 "noteadded": "Note added",
 "noticelargefile": "Please note that the file you are requesting to download is large and may take some time to complete.",
