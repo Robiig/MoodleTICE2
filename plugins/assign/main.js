@@ -235,14 +235,6 @@ define(templates, function (assignTpl, submissionsTpl) {
 
             });
 			
-			
-			$(".grading-user").on(MM.clickType, function(e) {
-				var courseId = $(this).data("courseid");
-				var moduleId = $(this).data("cmid");
-				var userId = $(this).data("userid");
-				MM.plugins.grading.viewActivities(courseId, moduleId, userId);
-				
-            });
 		
             // Handle intro files downloads.
             $(".assign-download", "#panel-right").on(MM.clickType, function(e) {

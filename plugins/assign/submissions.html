@@ -138,12 +138,10 @@
                                 <div class="content-actions app-icon">
 								
 								<% if (file.localpath) { %>
-								
-									<img id="feedimg-<%= file.id %>" src="img/ico-pencil.png" class="grading-user" data-userid="<%=user.userid%>" data-cmid="<%=assign.cmid%>" data-courseid="<%=assign.course%>" >
-					
+									<a href="#grading/participants/<%=assign.course%>/<%=assign.cmid%>/<%=user.userid%>">
+										<img id="feedimg-<%= file.id %>" src="img/ico-pencil.png" >
+									</a>
 								 <% } %>
-								
-								
                                     <img id="downimg-<%= file.id %>" src="img/<%= dImg %>.png" class="assign-download" data-downloadurl="<%= file.fileurl %>" data-filename="<%= file.filepath %>" data-attachmentid="<%= file.id %>">
                                 </div>
                                 <div class="content-name">
