@@ -253,9 +253,12 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
                                 content = content.replace("\n", "<br />");
                                 content = img + " " + content;
 
+
                                 html += "<" + celltype + " " + id + " " + headers + " " + "class='"+ tclass +"' " + colspan +">";
                                 html += content;
                                 html += "</" + celltype + ">\n";
+								
+								
                             }
                         }
                     }

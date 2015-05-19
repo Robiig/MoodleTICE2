@@ -80,7 +80,7 @@ define(templates,function (gradingPageTpl) {
 						// Error callback, when no permissions
 						function(e) {
 							
-							aleert('no accsee');
+							alert('No permissions');
 						}
 					
 					);
@@ -265,8 +265,8 @@ define(templates,function (gradingPageTpl) {
 
             var params = {
                 "assignmentids[0]": assign.id
-            };
-
+            };	
+			
             MM.moodleWSCall("mod_assign_get_submissions",
                 params,
                 // Success callback.

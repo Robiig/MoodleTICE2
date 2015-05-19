@@ -215,9 +215,6 @@ define(templates, function (assignTpl, submissionsTpl) {
             var html = MM.tpl.render(MM.plugins.assign.templates.submissions.html, data);
             MM.panels.show("right", html, {title: pageTitle});
 
-
-			//-----------------------\\
-			// /!\ ADD BY STUDENT /!\ 
 			
 			//if less than 2 submissions files, hide all download button
 			if($(".assign-download").length<2){
@@ -246,10 +243,7 @@ define(templates, function (assignTpl, submissionsTpl) {
 				MM.plugins.grading.viewActivities(courseId, moduleId, userId);
 				
             });
-			//__________________________\\
-			
-			
-			
+		
             // Handle intro files downloads.
             $(".assign-download", "#panel-right").on(MM.clickType, function(e) {
                 e.preventDefault();
