@@ -22,78 +22,90 @@
 
         <% if (canviewsubmissions) { %>
 		
-		<center>
-        <h3><%= MM.lang.s('submissions') %> </h3>
-		</center>
-        <% _.each(submissions, function(submission) { %>
-		
-		<% if(submission.userid == user.userid) { %>
+			<center>
+			<h3><%= MM.lang.s('submissions') %> </h3>
+			</center>
+			<% var status = false %>
+			<% _.each(submissions, function(submission) { %>
+				
+				<% if(submission.userid == user.userid) { %>
+					<% status = true %>
+					<div class="post" data-assignsubmission="<%= submission.submission %>">
+						<div class="header">
+							<img class="user-picture" src="<%= MM.util.getMoodleFilePath(user.profileimageurl) %>">
+							<a class="author-name" href="#participant/<%= assign.course %>/<%= submission.userid %>/1" rel="author"><%= user.fullname %></a>
+							<time><%= MM.util.timestampToUserDate(submission.timemodified) %></time>
 
-            <div class="post" data-assignsubmission="<%= submission.submission %>">
-                <div class="header">
-                    <img class="user-picture" src="<%= MM.util.getMoodleFilePath(user.profileimageurl) %>">
-                    <a class="author-name" href="#participant/<%= assign.course %>/<%= submission.userid %>/1" rel="author"><%= user.fullname %></a>
-                    <time><%= MM.util.timestampToUserDate(submission.timemodified) %></time>
+						</div>
+						<div class="content">
+				  
 
-                </div>
-                <div class="content">
-              
+							<% var text = MM.plugins.assign._getSubmissionText(submission); %>
+							<% var files = MM.plugins.assign._getSubmissionFiles(submission); %>
 
-                    <% var text = MM.plugins.assign._getSubmissionText(submission); %>
-                    <% var files = MM.plugins.assign._getSubmissionFiles(submission); %>
+							<% if (text != '') { %>
+								<p><a href="#" class="submissiontext" data-submissionid="<%= submission.id %>"><%= MM.lang.s('viewsubmission') %></a></p>
+							<% } %>
 
-                    <% if (text != '') { %>
-                        <p><a href="#" class="submissiontext" data-submissionid="<%= submission.id %>"><%= MM.lang.s('viewsubmission') %></a></p>
-                    <% } %>
+							<% if (files.length > 0) { %>
 
-                    <% if (files.length > 0) { %>
+								<div class="attachments">
+							
+									<% _.each(files, function(file) { %>
+										<% if (file.localpath) { %>
+											<% var dImg = "reloadgrey"; %>
+										<% } else { %>
+											<% var dImg = "download"; %>
+										<% } %>
+										<div class="attachment media">
+											<div class="content-actions app-icon">			
+												<img id="downimg-<%= file.id %>" src="img/<%= dImg %>.png" class="assign-download" data-downloadurl="<%= file.fileurl %>" data-filename="<%= file.filepath %>" data-attachmentid="<%= file.id %>">
+											</div>
+											<div class="content-name">
+												<div class="img app-ico">
+													<img src="img/files/<%= file.icon %>" alt="img">
+												</div>
+												<div class="bd">
+													<% if (!file.localpath) { %>
+														<a id="file-<%= file.id %>" class="assign-download" href="#" data-downloadurl="<%= file.fileurl %>" data-filename="<%= file.filepath %>" data-attachmentid="<%= file.id %>">
+															<%= file.filepath %>
+														</a>
+													<% } else { %>
+														<a id="file-<%= file.id %>" href="<%= file.localpath %>" rel="external">
+															<%= file.filepath %>
+														</a>
+													<% } %>
+												</div>
+											</div>
+										</div>
 
-                        <div class="attachments">
+									<% }); %>
+								</div>
+
+							<% } else if  (text == ''){ %>
+								<span><%= MM.lang.s('nosubmissions') %></span>
+							<% } %>
 						
-                            <% _.each(files, function(file) { %>
-                            <% if (file.localpath) { %>
-                                <% var dImg = "reloadgrey"; %>
-                                <% } else { %>
-                                <% var dImg = "download"; %>
-                            <% } %>
-                            <div class="attachment media">
-                                <div class="content-actions app-icon">			
-                                    <img id="downimg-<%= file.id %>" src="img/<%= dImg %>.png" class="assign-download" data-downloadurl="<%= file.fileurl %>" data-filename="<%= file.filepath %>" data-attachmentid="<%= file.id %>">
-                                </div>
-                                <div class="content-name">
-                                    <div class="img app-ico">
-                                        <img src="img/files/<%= file.icon %>" alt="img">
-                                    </div>
-                                    <div class="bd">
-                                        <% if (!file.localpath) { %>
-                                        <a id="file-<%= file.id %>" class="assign-download" href="#" data-downloadurl="<%= file.fileurl %>" data-filename="<%= file.filepath %>" data-attachmentid="<%= file.id %>">
-                                            <%= file.filepath %>
-                                        </a>
-                                        <% } else { %>
-                                        <a id="file-<%= file.id %>" href="<%= file.localpath %>" rel="external"
-                                            ><%= file.filepath %>
-                                        </a>
-                                        <% } %>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <% }); %>
-                        </div>
-
-                    <% } else if  (text == ''){ %>
-						<span><%= MM.lang.s('nosubmissions') %></span>
-					<% } %>
-					
-
-                </div>
-            </div>
+						</div>
+					</div>
+				
+				<% } %>
+				
+			<% }); %>
+			<% if (status == false) {%>
+				<div><center> L'étudiant ne s'est jamais rendu sur le devoir.. </center></div>
+			<% } %>
 			
-        <% }}); %>
-        <% } else { %>
-            <div class="centered">
-                <a href="<%= activityLink %>" target="_blank"><button><%= MM.lang.s('addsubmission') %></button></a>
-            </div>
+			<center><h3>Evaluation</h3></center>
+			<div id="grading"  style="padding: 10px;">
+				<%= gradingForm %>
+			</div>
+				
+		<% } else { %>
+			<div class="centered">
+				<a href="<%= activityLink %>" target="_blank"><button><%= MM.lang.s('addsubmission') %></button></a>
+			</div>
         <% } %>
     </div>
 </div>

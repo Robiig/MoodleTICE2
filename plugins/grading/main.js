@@ -1,9 +1,9 @@
 var templates = [
-    "root/externallib/text!root/plugins/grading/grading_page.html"
-
+    "root/externallib/text!root/plugins/grading/grading_page.html",
+	"root/externallib/text!root/plugins/grading/grading_form.html"
 ];
 
-define(templates,function (gradingPageTpl) {
+define(templates,function (gradingPageTpl,gradingFormTpl) {
     var plugin = {
         settings: {
             name: "grading",
@@ -20,15 +20,6 @@ define(templates,function (gradingPageTpl) {
 			["grading/module/user/:courseid/:moduleid/:userid", "grading", "loadGradingPage"],
         ],
 
-
-		isPluginVisible: function() {
-            // Check core services.
-			
-			// A COMPLETER PLUS TARD AVEC LES WS UTILISES
-			
-            return true;
-
-		},
 
         viewActivities: function(courseId, moduleId, userId) {
 			userId = userId || -1;
@@ -349,11 +340,44 @@ define(templates,function (gradingPageTpl) {
 								'profileimageurl': user[0].profileimageurl
 							};
 
-								data.user = newUser;
+							data.user = newUser;
 										
-						
-							// Render the submissions page.
-							MM.plugins.grading._renderSubmissionsPage(data, pageTitle);
+							var paramsGradingForm = {
+								"courseid" : data.assign.course,
+								"userids[0]" : data.user.userid
+							}
+
+							if(MM.util.wsAvailable('core_grades_get_grades') && MM.util.wsAvailable('core_grades_update_grades')){
+								MM.moodleWSCall('core_grades_get_grades', paramsGradingForm, function(p) {
+									// Render the grading page with grading form
+									var dataGrade;
+									
+									_.each(p['items'], function(item) {
+										if (parseInt(item.activityid) == data.assign.cmid ) {
+										
+											dataGrades = item;
+											//delete html <>
+											reg=new RegExp("<.[^<>]*>", "gi" );
+											comment=item.grades[0].str_feedback.replace(reg, "" );
+											dataGrades.feedback= comment.trim();
+										}
+									});
+									
+									data.gradingForm = MM.tpl.render(MM.plugins.grading.templates.gradingForm.html, dataGrades);
+									MM.plugins.grading._renderGradingPage(data, pageTitle);
+								}, null,
+								function(m) {
+									// Render the grading page without grading form (error or no permissions)
+									data.gradingForm = "<p>Erreur dans le chargement du formulaire d'évaluation</p>";
+									MM.plugins.grading._renderGradingPage(data, pageTitle);
+								});
+							}	
+							else{
+								// Render the grading page without grading form (unavailable)
+								data.gradingForm = "<p>Formulaire d'évaluation indisponible</p><br/><p>Merci de réessayer plus tard</p>";
+								MM.plugins.grading._renderGradingPage(data, pageTitle);
+							}
+							
 						}, null, function(m) {
 							MM.popErrorMessage(m);
 						});
@@ -369,10 +393,11 @@ define(templates,function (gradingPageTpl) {
         },
 
 
-        _renderSubmissionsPage: function(data, pageTitle) {
+        _renderGradingPage: function(data, pageTitle) {
 
             MM.plugins.assign.submissionsCache = data.submissions;
-
+		
+			
             var html = MM.tpl.render(MM.plugins.grading.templates.gradingPage.html, data);
             MM.panels.show("right", html, {title: pageTitle});
 						
@@ -405,11 +430,57 @@ define(templates,function (gradingPageTpl) {
                 MM.widgets.renderIframeModalContents(pageTitle, text);
 
             });
+			
+			//Update grades
+			$("#update_grade_button").on(MM.clickType, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+				$('#sending_status').attr("src", "img/loadingblack.gif");
+				
+				var params = {
+					"source": "mod_grading",
+					"courseid": data.assign.course,
+					"component": "mod_assign",
+					"activityid": data.assign.cmid,
+					"itemnumber": 0,
+					"grades": 
+						[{	
+							studentid: data.user.userid
+						}]
+				}
+				
+				
+				reg=new RegExp("<.[^<>]*>", "gi" );
+				
+				
+				var comment = $("#initial_feedback_comment").html();
+				var str_comment=comment.replace(reg, "" );
+				str_comment = str_comment.trim();
+				var comment = $("#feedback_comment").val();
+				comment = comment.trim();
+				if(!(JSON.stringify(str_comment) === JSON.stringify(comment)) )
+					params.grades[0].str_feedback = $("#feedback_comment").val();
+				var grade = $("#feedback_grade").val();
+				grade = parseFloat(grade);
+				if(!isNaN(grade))
+					params.grades[0].grade = grade;
+				
+				MM.moodleWSCall('core_grades_update_grades', params, function(p) {
+					$('#sending_status').attr("src", "img/sent.png");				
+				}, null,
+				function(m) {
+					$('#sending_status').attr("src", "img/error.png");	 MM.popErrorMessage(m);
+				});
+					 
+			});
         },
 		
         templates: {
             "gradingPage": {
                 html: gradingPageTpl
+            },
+			"gradingForm": {
+                html: gradingFormTpl
             }
         }
     };

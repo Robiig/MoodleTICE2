@@ -278,6 +278,7 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
                 "courseid" : courseId,
                 "userid"   : userId
             };
+					
 
             MM.moodleWSCall(MM.plugins.grades.wsName, data,
                 function(table) {
