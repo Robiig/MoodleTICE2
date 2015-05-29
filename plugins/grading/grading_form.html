@@ -1,16 +1,15 @@
-<label> Note : </label>
-<input input type="text" pattern="^-?(?:[0-9]+|[0-9]*\.[0-9]+)$" id="feedback_grade"  value="<%= grades[0].grade %>" style="width: 25%;"/>/<%= grademax %><br/>
+<label> <%= MM.lang.s('grade') %> :</label>
+<input type="text" id="feedback_grade"  value="<%= grade%>" style="width: 25%;"/>/<%= gradeMax %><br/>
 
-<label> Commentaire : </label>
-<textarea id="feedback_comment" rows="20" cols="30">
-	<%= feedback %>
+<label> <%= MM.lang.s('comment') %> : </label>
+<textarea id="feedback_comment" rows="10" cols="30">
+	<%= comment %>
 </textarea>
-<div style="visibility: hidden;" id="initial_feedback_comment"> 
-	<%= grades[0].str_feedback %>
-</div>
+
 <br/>
 
 <div>
 <img id="sending_status"/>
 </div>
-<button id="update_grade_button">Valider</button>
+<button id="update_grade_button"> <%= MM.lang.s('save') %></button>
+<button id="send_feedbackFile_button">  test </button>

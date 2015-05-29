@@ -296,6 +296,34 @@ hr {
   margin: 10px;
   text-align: center;
 }
+
+/* =2.4.2 - GRADING STATUS BUTTON
+------------------------------------------------------ */
+#grading_status .status{
+	background-image: none;
+}
+
+#grading_status a#undefined:hover{
+	background-color: rgba(68, 163, 246, 0.45);
+}
+#grading_status a#undefined.active{
+	background-color: rgba(68, 163, 246, 0.45);
+}
+
+#grading_status a#in_progress:hover{
+	 background-color: orange;
+}
+#grading_status a#in_progress.active{
+	 background-color: orange;
+}
+
+#grading_status a#ended:hover{
+	background-color: rgb(17, 211, 38);
+}
+#grading_status a#ended.active{
+	background-color: rgb(17, 211, 38);
+}
+
 /* =2.4 - DROPDOWN MODULE
 ------------------------------------------------------ */
 .btn .dropdown {
@@ -314,6 +342,8 @@ hr {
   width: 100%;
   height: auto;
 }
+
+
 /* =2.5 - MEDIA OBJECT
 ------------------------------------------------------ */
 .media {

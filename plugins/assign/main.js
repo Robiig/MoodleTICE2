@@ -49,8 +49,8 @@ define(templates, function (assignTpl, submissionsTpl) {
             };
             // Store the section name.
             MM.plugins.assign.sectionsCache[module.contentid] = MM.util.formatText(section.name);
-
-            return MM.tpl.render(MM.plugins.assign.templates.view.html, data);
+			
+			return MM.tpl.render(MM.plugins.assign.templates.view.html, data);
         },
 
         perPage: 20,
@@ -217,7 +217,7 @@ define(templates, function (assignTpl, submissionsTpl) {
 
 			
 			//if less than 2 submissions files, hide all download button
-			if($(".assign-download").length<2){
+			if($(".toDownload").length<2){
 				$("#download_all_files").hide();
 			}
 			
@@ -226,11 +226,11 @@ define(templates, function (assignTpl, submissionsTpl) {
                 e.preventDefault();
                 e.stopPropagation();
 
-				$(".bd > .assign-download").each(function(){
+				$(".toDownload").each(function(){
 				    var url = $(this).data("downloadurl");
 					var filename = $(this).data("filename");
 					var attachmentId = $(this).data("attachmentid");
-					MM.plugins.assign._downloadFile(url, filename, attachmentId,false);
+					MM.plugins.assign._downloadFile(url, filename, attachmentId);
 				})
 
             });
@@ -245,7 +245,7 @@ define(templates, function (assignTpl, submissionsTpl) {
                 var filename = $(this).data("filename");
                 var attachmentId = $(this).data("attachmentid");
 
-                MM.plugins.assign._downloadFile(url, filename, attachmentId,true);
+                MM.plugins.assign._downloadFile(url, filename, attachmentId);
             });
 
             // View submission texts.
@@ -315,7 +315,7 @@ define(templates, function (assignTpl, submissionsTpl) {
             return files;
         },
 
-        _downloadFile: function(url, filename, attachmentId, one_file) {
+        _downloadFile: function(url, filename, attachmentId) {
             // Add the token.
             var downloadURL = MM.fixPluginfile(url);
             var siteId = MM.config.current_site.id;
@@ -353,7 +353,7 @@ define(templates, function (assignTpl, submissionsTpl) {
                                     localpath: fullpath
                                 };
                                 MM.db.insert("assign_files", file);
-
+								$(downCssId).remove();
                             },
                             function(fullpath) {
                                 $(downCssId).remove();
@@ -362,52 +362,7 @@ define(templates, function (assignTpl, submissionsTpl) {
                         );
 						
 						
-                    });
-					
-					
-					
-					
-					var directory2 = siteId + "/feedback-files/" + attachmentId;
-					var filePath2 = directory2 + "/" + filename;
-					 MM.log("Starting download of Moodle file in Feedback directory2: " + downloadURL);
-                    // All the functions are asynchronous, like createDir.
-                    MM.fs.createDir(directory2, function() {
-                        MM.log("Downloading Moodle file to " + filePath2 + " from URL: " + downloadURL);
-
-                     
-						
-						//Pour télécharger dans dossier feedback 
-                        MM.moodleDownloadFile(downloadURL, filePath2,
-                            function(fullpath) {
-                                MM.log("Download of content finished " + fullpath + " URL: " + downloadURL);
-
-
-                                $(downCssId).remove();
-
-                                // Remove class and events.
-                                $(linkCssId).removeClass("assign-download");
-                                $(linkCssId).off(MM.clickType);
-
-                                // Android, open in new browser
-								if(one_file){
-								
-									MM.handleFiles(linkCssId);
-									MM._openFile(fullpath);
-								}
-
-                            },
-                            function(fullpath) {
-                                $(downCssId).remove();
-                                MM.log("Error downloading " + fullpath + " URL: " + downloadURL);
-                            }
-                        );
-						
-						
-                    });
-					
-					
-					
-					
+                    });	
 					
                 } else {
                     MM.popErrorMessage(MM.lang.s("errornoconnectednocache"));

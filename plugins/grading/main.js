@@ -13,18 +13,23 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
                 component: "core"
             }
         },
+		
+		storage: {
+            "grading_info": {type: "model"},
+            "grading_infos": {type: "collection", model: "grading_info"}
+        },
 
         routes: [
-            ["grading/participants/:courseid/:moduleid", "grading", "viewActivities"],
-			["grading/participants/:courseid/:moduleid/:userid", "grading", "viewActivities"],
-			["grading/module/user/:courseid/:moduleid/:userid", "grading", "loadGradingPage"],
+            ["grading/participants/:courseid/:moduleid/:showallparticipants", "grading", "viewActivities"],
+			["grading/participants/:courseid/:moduleid/:showallparticipants/:userid", "grading", "viewActivities"],
+			["grading/module/user/:courseid/:moduleid/:userid", "grading", "viewAssign"],
         ],
 
 
-        viewActivities: function(courseId, moduleId, userId) {
+        viewActivities: function(courseId, moduleId, showAllParticipant, userId) {
 			userId = userId || -1;
 
-            MM.panels.showLoading('center');
+           
 
 			    var params = {
 				coursecapabilities:
@@ -55,15 +60,15 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
 												
 						if(canSeeAllGrades){
 							//allowed access
-							
-							MM.plugins.grading.showParticipants(courseId,moduleId,userId);
+							 MM.panels.showLoading('center');
+							MM.plugins.grading.showParticipants(courseId,moduleId,showAllParticipant,userId);
 							
 						}
 						
 						else						
 							//no permissions
 							
-							MM.plugins.grading.loadGradingPage(courseId, moduleId, MM.config.current_site.userid);			
+							MM.plugins.grading.viewAssign(courseId, moduleId, MM.config.current_site.userid);			
 							
 							
 						},{},
@@ -71,7 +76,8 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
 						// Error callback, when no permissions
 						function(e) {
 							
-							alert('No permissions');
+							MM.popErrorMessage(MM.lang.s("nopermissionstograding"));
+							
 						}
 					
 					);
@@ -79,35 +85,17 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
 				}else 
 					//if WS not available
 					
-					MM.plugins.grading.loadGradingPage(courseId, moduleId, MM.config.current_site.userid);
+					MM.plugins.grading.viewAssign(courseId, moduleId, MM.config.current_site.userid);
 
         },
 
 
-        loadGradingPage: function(courseId, moduleId, userId) {
-			
-			var popUp = MM.deviceType == "phone";
 		
-			MM.plugins.grading.viewAssign(courseId, moduleId, userId);
-			/*
-			var tpl = {
-				courseid : courseId,
-				moduleid : moduleId,
-                userid   : userId,
-				popUp	 : popUp
-			};
+		//showAllParticipant: 1 show all the participants who follow the course.
+							//0 show only participants who sent a submission
+		showParticipants: function(courseId, moduleId, showAllParticipant, userId) { 
+
 			
-			var html = MM.tpl.render(MM.plugins.grading.templates.gradingPage.html, tpl);
-
-			// Display as popup in the right side (from participants page).
-
-				MM.panels.show('right', html, {title: "Devoir"});
-*/
-                
-        },
-		
-		showParticipants: function(courseId, moduleId, userId) {
-
             MM.panels.showLoading('center');
 
             if (MM.deviceType == "tablet") {
@@ -115,7 +103,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
             }
 
 
-            MM.plugins.participants._loadParticipants(courseId, 0, MM.plugins.participants.limitNumber,
+            MM.plugins.grading._loadParticipants(courseId, 0, MM.plugins.participants.limitNumber,
                 function(users) {
                     // Removing loading icon.
                     $('a[href="#participants/' +courseId+ '"]').removeClass('loading-row');
@@ -146,20 +134,28 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
                         pageTitle = course.get("shortname");;
                     }
 
-                    MM.panels.show('center', "<a href='#course/contents/"+courseId+"'><img src='img/arrowleft.png'></a>"+html, {title: pageTitle});
+					if(showAllParticipant == 0)
+					MM.panels.show('center', "<a href='#course/contents/"+courseId+"'><img src='img/arrowleft.png'></a> <a href='#grading/participants/"+courseId+"/"+moduleId+"/1' > <button style='margin-left: 40%;'>"+ MM.lang.s('showall')+ "</button></a>"+html, {title: pageTitle});
+					else
+                    MM.panels.show('center', "<a href='#course/contents/"+courseId+"'><img src='img/arrowleft.png'></a> <a href='#grading/participants/"+courseId+"/"+moduleId+"/0'> <button style='margin-left: 40%;'> "+ MM.lang.s('submissions')+ "</button></a>"+html, {title: pageTitle});
 					
 
 					
                     // Load the first user
 					if(userId != -1){
-						MM.plugins.grading.loadGradingPage(courseId, moduleId, userId,1,1);
+						MM.plugins.grading.viewAssign(courseId, moduleId, userId,1);
 						$("#panel-center #user-"+userId).addClass("selected-row");
 					}
-                    else if (MM.deviceType == "tablet" && users.length > 0) {
+                    else if (MM.deviceType == "tablet") {
+						if(users.length > 0){
 							$("#panel-center li:eq(0)").addClass("selected-row");
-							MM.plugins.grading.loadGradingPage(courseId, moduleId, users.shift().id,1,1);
+							MM.plugins.grading.viewAssign(courseId, moduleId, users.shift().id,1);
 							$("#panel-center li:eq(0)").addClass("selected-row");
+							}
+						else{
+							MM.panels.show("right", "<center>"+MM.lang.s('nosubmissions')+"<center>", {title: pageTitle});
 						}
+					}
 
                     
 
@@ -211,10 +207,84 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
                     if (typeof(m) !== "undefined" && m) {
                         MM.popErrorMessage(m);
                     }
-				}
+				},
+				moduleId,
+				showAllParticipant
                 
             );
         },
+		
+		_loadParticipants: function(courseId, limitFrom, limitNumber, successCallback, errorCallback, moduleId, showAllParticipant) {
+            var data = {
+                "courseid" : courseId,
+                "options[0][name]" : "limitfrom",
+                "options[0][value]": limitFrom,
+                "options[1][name]" : "limitnumber",
+                "options[1][value]": limitNumber,
+            };
+
+            MM.moodleWSCall('moodle_user_get_users_by_courseid', data, 
+				function(users) {
+				    var params = {
+						"courseids[0]": courseId
+					};
+					if(showAllParticipant == 1){
+						successCallback(users);
+					}
+					else(
+				    MM.moodleWSCall("mod_assign_get_assignments",
+						params,
+						function(result) {
+							var course = result.courses.shift();
+							var currentAssign;
+							_.each(course.assignments, function(assign) {
+								if (assign.cmid == moduleId) {
+									currentAssign = assign;
+								}
+							});
+						
+
+							var params = {
+								"assignmentids[0]": currentAssign.id
+							};
+							MM.moodleWSCall("mod_assign_get_submissions", params,
+								// Success callback.
+								function(result) {
+									var wUsers = [];
+									_.each(result.assignments[0].submissions, function(submission) {
+										var text = MM.plugins.assign._getSubmissionText(submission);
+										var files = MM.plugins.assign._getSubmissionFiles(submission);
+										if (text != '' || files.length > 0){
+											_.each(users, function(user){
+												if(user.id == submission.userid)
+													wUsers.push(user);
+											});
+										}
+									});
+									successCallback(wUsers);
+								},
+								null,
+								function (error) {
+									MM.popErrorMessage(error);
+								}
+							);
+						
+						}, 
+						null, 
+						function(m) {
+							errorCallback(m);
+						}
+					));
+
+				},
+				null,
+				function (error) {
+					$("#info-" + cmid, "#panel-right").attr("src", "img/info.png");
+					MM.popErrorMessage(error);
+				}
+			);
+
+		},
 		
 		viewAssign: function(courseId, cmid, userId) {
             // Loading ....
@@ -347,7 +417,9 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
 								"userids[0]" : data.user.userid
 							}
 
-							if(MM.util.wsAvailable('core_grades_get_grades') && MM.util.wsAvailable('core_grades_update_grades')){
+							if(MM.util.wsAvailable('core_grades_update_grades')){
+							/* CECI EST LE CODE POUR CHARGER LES NOTES ET COMMENTAIRES DEPUIS LE SERVEUR
+							
 								MM.moodleWSCall('core_grades_get_grades', paramsGradingForm, function(p) {
 									// Render the grading page with grading form
 									var dataGrade;
@@ -360,6 +432,17 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
 											reg=new RegExp("<.[^<>]*>", "gi" );
 											comment=item.grades[0].str_feedback.replace(reg, "" );
 											dataGrades.feedback= comment.trim();
+											
+											//handle status
+											var status = MM.db.get("grading_infos", data.assign.course+"_"+data.assign.cmid+"_"+data.user.userid);
+											if (typeof(status) !== "undefined") {
+												status = status.attributes.status;
+											}
+											else status = "";
+											
+											data.status = status;
+                    
+
 										}
 									});
 									
@@ -371,6 +454,37 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
 									data.gradingForm = "<p>Erreur dans le chargement du formulaire d'évaluation</p>";
 									MM.plugins.grading._renderGradingPage(data, pageTitle);
 								});
+								
+								*/ 
+								
+								var dataGrade={};
+								dataGrade.gradeMax = data.assign.grade;
+									//Si les infos sont déjà défini
+								var gradingInfo =MM.db.get("grading_infos", data.assign.course+"_"+data.assign.cmid+"_"+data.user.userid);
+								if(gradingInfo){
+									data.status = gradingInfo.attributes.status;
+									dataGrade.comment = gradingInfo.attributes.comment;
+									dataGrade.grade = gradingInfo.attributes.grade;
+
+								}
+									//sinon, on les défini
+								else{
+									var gradingInfo = {
+										id: data.assign.course+"_"+data.assign.cmid+"_"+data.user.userid,
+										courseId: data.assign.course,
+										cmId: data.assign.cmid,
+										userId: data.user.userid,
+										status: "undefined",
+										grade: null,
+										comment: null,
+									};
+
+									dataGrade.comment = gradingInfo.comment;
+									dataGrade.grade = gradingInfo.grade;
+								}
+								data.gradingForm = MM.tpl.render(MM.plugins.grading.templates.gradingForm.html, dataGrade);
+								MM.plugins.grading._renderGradingPage(data, pageTitle);
+								
 							}	
 							else{
 								// Render the grading page without grading form (unavailable)
@@ -392,7 +506,24 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
             );
         },
 
+											/*
+											var grading_status = {
+												id: data.assign.course+"_"+data.assign.cmid+"_"+data.user.userid,
+												courseId: data.assign.course,
+												cmId: data.assign.cmid,
+												userId: data.user.userid,
+												status: "in progress",
+												grade: null,
+												feedback: null,
+											};
+												
+											MM.db.insert("grading_infos", grading_status);
+											
+											var path = MM.db.get("grading_infos", data.assign.course+"_"+data.assign.cmid+"_"+data.user.userid);
 
+											var path = MM.db.where("grading_infos", {courseId: data.assign.course} );
+											*/
+											
         _renderGradingPage: function(data, pageTitle) {
 
             MM.plugins.assign.submissionsCache = data.submissions;
@@ -431,49 +562,112 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
 
             });
 			
+			//Grading status
+			
+			$("#grading_status .status").on(MM.clickType, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+				$('#sending_status').attr("src", "img/loadingblack.gif");
+				$("#grading_status .status").removeClass( "active" );
+				var newStatus = $(this).attr("id");
+				var grade = MM.plugins.grading.newGrade();
+				if (typeof grade === "undefined") {
+					var gradingInfo =MM.db.get("grading_infos", data.assign.course+"_"+data.assign.cmid+"_"+data.user.userid);
+					if(gradingInfo){
+						grade = gradingInfo.attributes.grade;
+					}
+				} 
+				var gradingInfo = {
+					id: data.assign.course+"_"+data.assign.cmid+"_"+data.user.userid,
+					courseId: data.assign.course,
+					cmId: data.assign.cmid,
+					userId: data.user.userid,
+					status: newStatus,
+					grade: grade,
+					comment: MM.plugins.grading.newFeedBack()
+				};
+				MM.db.insert("grading_infos", gradingInfo);
+				$(this).addClass("active");
+				$('#sending_status').attr("src", "img/received.png");
+			});
+			
+			
 			//Update grades
 			$("#update_grade_button").on(MM.clickType, function(e) {
                 e.preventDefault();
                 e.stopPropagation();
 				$('#sending_status').attr("src", "img/loadingblack.gif");
 				
-				var params = {
-					"source": "mod_grading",
-					"courseid": data.assign.course,
-					"component": "mod_assign",
-					"activityid": data.assign.cmid,
-					"itemnumber": 0,
-					"grades": 
-						[{	
-							studentid: data.user.userid
-						}]
-				}
+				var status = $("#grading_status .active").attr("id");
+				var grade = MM.plugins.grading.newGrade();
+				if (typeof grade === "undefined") {
+					var gradingInfo =MM.db.get("grading_infos", data.assign.course+"_"+data.assign.cmid+"_"+data.user.userid);
+					if(gradingInfo){
+						grade = gradingInfo.attributes.grade;
+					}
+				} 
+				var gradingInfo = {
+					id: data.assign.course+"_"+data.assign.cmid+"_"+data.user.userid,
+					courseId: data.assign.course,
+					cmId: data.assign.cmid,
+					userId: data.user.userid,
+					status: status,
+					grade: grade,
+					comment: MM.plugins.grading.newFeedBack()
+				};
+				MM.db.insert("grading_infos", gradingInfo);
 				
+				$('#sending_status').attr("src", "img/received.png");
+			});
+			
+			
+			$("#send_feedbackFile_button").on(MM.clickType, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+				var filepath="fa4ac72507326161125ed6b508b62c49/assign-files/60/CV%5BGauthier%20Robin%20%5D.pdf";
+
+				MM.fs.findFileAndGetContentsIn64(filepath, function(file){
+						var params = {
+
+							"contextlevel": "user",
+							"instanceid": 3,
+							"component": "user",
+							"filearea": "draft",
+							"itemid": 631256023,
+							"filepath": "/",
+							"filename": "test.pdf",
+							"filecontent": file.split("base64,")[1]
+						};
+						
+						MM.moodleWSCall('core_files_upload', params, function(file){
+							alert('ok');
+						},null,function(error){
+							alert('pas ok');
+						});
+						
+					}, function(e){
+							alert(e);
+					}
+				);
+
 				
-				reg=new RegExp("<.[^<>]*>", "gi" );
-				
-				
-				var comment = $("#initial_feedback_comment").html();
-				var str_comment=comment.replace(reg, "" );
-				str_comment = str_comment.trim();
-				var comment = $("#feedback_comment").val();
-				comment = comment.trim();
-				if(!(JSON.stringify(str_comment) === JSON.stringify(comment)) )
-					params.grades[0].str_feedback = $("#feedback_comment").val();
-				var grade = $("#feedback_grade").val();
-				grade = parseFloat(grade);
-				if(!isNaN(grade))
-					params.grades[0].grade = grade;
-				
-				MM.moodleWSCall('core_grades_update_grades', params, function(p) {
-					$('#sending_status').attr("src", "img/sent.png");				
-				}, null,
-				function(m) {
-					$('#sending_status').attr("src", "img/error.png");	 MM.popErrorMessage(m);
-				});
-					 
 			});
         },
+		
+		newGrade: function() {
+			var result;
+			var grade = $("#feedback_grade").val();
+			grade = parseFloat(grade);
+			if(!isNaN(grade))
+				result = grade;
+			return result;
+		},
+		
+		newFeedBack: function() {
+			var comment = $("#feedback_comment").val();
+			comment = comment.trim();				
+			return comment;
+		},
 		
         templates: {
             "gradingPage": {

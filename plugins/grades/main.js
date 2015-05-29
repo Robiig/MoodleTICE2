@@ -294,12 +294,13 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
 
                     // Display as popup in the right side (from participants page).
 					
-            if ( MM.deviceType == "tablet" || popUp) {
-				MM.panels.show('right', html, {});
-			} else {
-				$(menuEl, '#panel-left').removeClass('loading-row');
-				MM.panels.show("center", html, {title: MM.util.formatText(course.get("fullname")), hideRight: true});
+			if(popUp){
+				MM.panels.show('right', html, {});$(menuEl, '#panel-left').removeClass('loading-row');
 			}
+			else{
+				MM.panels.show('center', html, {hideRight: true});$(menuEl, '#panel-left').removeClass('loading-row');
+				}
+			
 
                 },
                 {},
@@ -522,7 +523,6 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
 		showParticipants: function(courseId) {
 
             MM.panels.showLoading('center');
-
             if (MM.deviceType == "tablet") {
                 MM.panels.showLoading('right');
             }
@@ -563,7 +563,7 @@ define(templates,function (activities, activitiesTotal, gradesTable) {
                     // Load the first user
                     if (MM.deviceType == "tablet" && users.length > 0) {
                         $("#panel-center li:eq(0)").addClass("selected-row");
-						MM.plugins.grades.loadGradesTable(courseId, users.shift().id);
+						MM.plugins.grades.loadGradesTable(courseId, users.shift().id,1);
                         $("#panel-center li:eq(0)").addClass("selected-row");
                     }
 

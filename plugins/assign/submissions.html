@@ -96,7 +96,7 @@
 			<center>
 				<div id="all-files">
 				
-					<a id="download_all_files" href="#"> Tout télécharger </a>
+					<a id="download_all_files" href="#"><%= MM.lang.s("downloadeverything") %> </a>
 				</div>
 			</center>
 			
@@ -130,19 +130,22 @@
                         <div class="attachments">
                             <% _.each(files, function(file) { %>
                             <% if (file.localpath) { %>
-                                <% var dImg = "reloadgrey"; %>
+                                <% var dImg = "reloadgrey";
+									var toDownload= "";%>
+								
                                 <% } else { %>
-                                <% var dImg = "download"; %>
+                                <% var dImg = "download";
+									var toDownload= " toDownload";%>
                             <% } %>
                             <div class="attachment media">
                                 <div class="content-actions app-icon">
 								
 								<% if (file.localpath) { %>
-									<a href="#grading/participants/<%=assign.course%>/<%=assign.cmid%>/<%=user.userid%>">
-										<img id="feedimg-<%= file.id %>" src="img/ico-pencil.png" >
+									<a href="#grading/participants/<%=assign.course%>/<%=assign.cmid%>/0/<%=user.userid%>">
+										<img id="gradingImg-<%= file.id %>" src="img/ico-pencil.png" >
 									</a>
 								 <% } %>
-                                    <img id="downimg-<%= file.id %>" src="img/<%= dImg %>.png" class="assign-download" data-downloadurl="<%= file.fileurl %>" data-filename="<%= file.filepath %>" data-attachmentid="<%= file.id %>">
+                                    <img id="downimg-<%= file.id %>" src="img/<%= dImg %>.png" class="assign-download <%= toDownload %>" data-downloadurl="<%= file.fileurl %>" data-filename="<%= file.filepath %>" data-attachmentid="<%= file.id %>">
                                 </div>
                                 <div class="content-name">
                                     <div class="img app-ico">

@@ -17,12 +17,31 @@
 	</div>
 <% } %>	
 <div class="content-index">
+        <% if (canviewsubmissions) { %>
+		<div id="grading_status">
+		<center><p> Etat de la correction : </p>
+			<% if (status == "in_progress") { %>
+				<a id="undefined" class="btn status">Undefined</a>
+				<a id="in_progress" class="btn status active">In progress</a>
+				<a id="ended" class="btn status">Ended</a>
+			<%} else if (status == "ended"){ %>
+				<a id="undefined" class="btn status">Undefined</a>
+				<a id="in_progress" class="btn status">In progress</a>
+				<a id="ended" class="btn status active">Ended</a>
+			<%} else { %>
+				<a id="undefined" class="btn status active">Undefined</a>
+				<a id="in_progress" class="btn status">In progress</a>
+				<a id="ended" class="btn status">Ended</a>
+		<% } } %>
+		</center>
+		</div>
+		
     <div class="path-mod-assign">
 
 
         <% if (canviewsubmissions) { %>
-		
-			<center>
+			
+
 			<h3><%= MM.lang.s('submissions') %> </h3>
 			</center>
 			<% var status = false %>
@@ -94,10 +113,10 @@
 				
 			<% }); %>
 			<% if (status == false) {%>
-				<div><center> L'étudiant ne s'est jamais rendu sur le devoir.. </center></div>
+				<div><center> <%= MM.lang.s('usernevercome') %></center></div>
 			<% } %>
 			
-			<center><h3>Evaluation</h3></center>
+			<center><h3><%=MM.lang.s('grading')%></h3></center>
 			<div id="grading"  style="padding: 10px;">
 				<%= gradingForm %>
 			</div>
