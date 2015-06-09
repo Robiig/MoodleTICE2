@@ -1950,3 +1950,45 @@ div.jqi button.jqidefaultbutton {
 #app-dialog.full-screen-dialog .modalFooter {
   border-top: 0px;
 }
+
+/* - Table in grading administration page (panel right)
+-------------------------------------------------------------------------- */
+#gradingInfosTable{
+	text-align: center;
+}
+
+#gradingInfosTable td{
+	width: 33%;
+}
+
+/* - Participants row for grading (panel center)
+-------------------------------------------------------------------------- */
+.grading .nav .nav-item > a {
+  cursor: pointer;
+  display: inline-block;
+  padding: 10px;
+  width: 70%;
+  }
+  
+ .grading button{
+	background:none;
+ }
+ .grading .status_checkbox {
+cursor: pointer; 
+  margin: 5px;
+  width: 30px;
+  height: 35px;
+  vertical-align: top;
+  }
+  .grading .status_checkbox.ended_grading {
+  background-image: url(../img/received.png);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}  
+ .grading .status_checkbox.in_progress_grading {
+  background-image: url(../img/time.png);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}  

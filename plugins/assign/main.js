@@ -132,7 +132,7 @@ define(templates, function (assignTpl, submissionsTpl) {
                         "sectionName": sectionName,
                         "activityLink": MM.config.current_site.siteurl + '/mod/assign/view.php?id=' + assign.cmid,
                         "submissions": [],
-                        "users": {}
+                        "users": {},
                     };
 
                     // Check if we can view submissions, with enought permissions.
@@ -174,15 +174,25 @@ define(templates, function (assignTpl, submissionsTpl) {
                                 data.submissions.forEach(function(sub) {
                                     userIds.push(sub.userid);
                                 });
+								
+								//keep only student
+								var students = [];
+								_.each(users, function(user) {
+									if (user.roles[0].shortname == "student") {
+										students.push(user);
+									}
+								});
+
 
                                 // Save the users in the users table. We are going to need the user names.
                                 var newUser;
-                                users.forEach(function(user) {
+                                students.forEach(function(user) {
                                     newUser = {
                                         'id': MM.config.current_site.id + '-' + user.id,
                                         'userid': user.id,
                                         'fullname': user.fullname,
-                                        'profileimageurl': user.profileimageurl
+                                        'profileimageurl': user.profileimageurl,
+										'role': user.roles[0].shortname
                                     };
                                     MM.db.insert('users', newUser);
                                     if (userIds.indexOf(user.id) > -1) {
@@ -217,9 +227,13 @@ define(templates, function (assignTpl, submissionsTpl) {
 
 			
 			//if less than 2 submissions files, hide all download button
+			/*
+			
 			if($(".toDownload").length<2){
 				$("#download_all_files").hide();
 			}
+			
+			*/
 			
 			//TO DOWNLOAD EVERYTHING
             $("#download_all_files").on(MM.clickType, function(e) {

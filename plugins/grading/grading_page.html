@@ -19,19 +19,19 @@
 <div class="content-index">
         <% if (canviewsubmissions) { %>
 		<div id="grading_status">
-		<center><p> Etat de la correction : </p>
+		<center><p> <%=MM.lang.s('gradingstatus')%> : </p>
 			<% if (status == "in_progress") { %>
-				<a id="undefined" class="btn status">Undefined</a>
-				<a id="in_progress" class="btn status active">In progress</a>
-				<a id="ended" class="btn status">Ended</a>
+				<a id="undefined" class="btn status"><%=MM.lang.s('undefined')%></a>
+				<a id="in_progress" class="btn status active"><%=MM.lang.s('inprogress')%></a>
+				<a id="ended" class="btn status"><%=MM.lang.s('ended')%></a>
 			<%} else if (status == "ended"){ %>
-				<a id="undefined" class="btn status">Undefined</a>
-				<a id="in_progress" class="btn status">In progress</a>
-				<a id="ended" class="btn status active">Ended</a>
+				<a id="undefined" class="btn status"><%=MM.lang.s('undefined')%></a>
+				<a id="in_progress" class="btn status"><%=MM.lang.s('inprogress')%></a>
+				<a id="ended" class="btn status active"><%=MM.lang.s('ended')%></a>
 			<%} else { %>
-				<a id="undefined" class="btn status active">Undefined</a>
-				<a id="in_progress" class="btn status">In progress</a>
-				<a id="ended" class="btn status">Ended</a>
+				<a id="undefined" class="btn status active"><%=MM.lang.s('undefined')%></a>
+				<a id="in_progress" class="btn status"><%=MM.lang.s('inprogress')%></a>
+				<a id="ended" class="btn status"><%=MM.lang.s('ended')%></a>
 		<% } } %>
 		</center>
 		</div>
@@ -41,8 +41,9 @@
 
         <% if (canviewsubmissions) { %>
 			
+			
+			<h3><%= MM.lang.s('submissions') %></h3>
 
-			<h3><%= MM.lang.s('submissions') %> </h3>
 			</center>
 			<% var status = false %>
 			<% _.each(submissions, function(submission) { %>
@@ -52,15 +53,21 @@
 					<div class="post" data-assignsubmission="<%= submission.submission %>">
 						<div class="header">
 							<img class="user-picture" src="<%= MM.util.getMoodleFilePath(user.profileimageurl) %>">
-							<a class="author-name" href="#participant/<%= assign.course %>/<%= submission.userid %>/1" rel="author"><%= user.fullname %></a>
+							<a class="author-name" href="#" rel="author"><%= user.fullname %></a>
 							<time><%= MM.util.timestampToUserDate(submission.timemodified) %></time>
-
+							<span class="status">
+								<%= MM.lang.s(submission.status) %>
+							</span>
 						</div>
 						<div class="content">
 				  
 
 							<% var text = MM.plugins.assign._getSubmissionText(submission); %>
 							<% var files = MM.plugins.assign._getSubmissionFiles(submission); %>
+							
+							<% if(files.length > 0 && files[0].localpath){
+								var folderFilesPath = (files[0].localpath).replace(files[0].filepath,"/");
+							} %>
 
 							<% if (text != '') { %>
 								<p><a href="#" class="submissiontext" data-submissionid="<%= submission.id %>"><%= MM.lang.s('viewsubmission') %></a></p>
@@ -99,8 +106,14 @@
 										</div>
 
 									<% }); %>
-								</div>
+									
 
+								</div>
+									<% if(folderFilesPath){ %>
+									<a href="<%= folderFilesPath %>" rel="external">
+										<img src="img/folder.png"/>
+									</a>
+									<% } %>
 							<% } else if  (text == ''){ %>
 								<span><%= MM.lang.s('nosubmissions') %></span>
 							<% } %>

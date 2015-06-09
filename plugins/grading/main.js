@@ -1,9 +1,12 @@
 var templates = [
     "root/externallib/text!root/plugins/grading/grading_page.html",
-	"root/externallib/text!root/plugins/grading/grading_form.html"
+	"root/externallib/text!root/plugins/grading/grading_form.html",
+	"root/externallib/text!root/plugins/grading/participants.html",
+	"root/externallib/text!root/plugins/grading/participants_row.html",
+	"root/externallib/text!root/plugins/grading/admin_page.html"
 ];
 
-define(templates,function (gradingPageTpl,gradingFormTpl) {
+define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,participantsRowTpl,adminPageTpl) {
     var plugin = {
         settings: {
             name: "grading",
@@ -23,6 +26,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
             ["grading/participants/:courseid/:moduleid/:showallparticipants", "grading", "viewActivities"],
 			["grading/participants/:courseid/:moduleid/:showallparticipants/:userid", "grading", "viewActivities"],
 			["grading/module/user/:courseid/:moduleid/:userid", "grading", "viewAssign"],
+			["grading/module/admin/:courseid/:moduleid","grading","loadAdminPage"]
         ],
 
 
@@ -115,6 +119,14 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
 
                     MM.plugins.participants.nextLimitFrom = MM.plugins.participants.limitNumber;
 
+					//Add grading status to each users
+					users.forEach(function(user) {
+						var gradingInfo = MM.db.get("grading_infos", courseId+"_"+moduleId+"_"+user.id);
+						if(gradingInfo){
+							user.status = gradingInfo.attributes.status;
+						}
+                    });
+					
                     var tpl = {
                         users: users,
                         deviceType: MM.deviceType,
@@ -125,7 +137,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
 
                     };
 
-					var html = MM.tpl.render(MM.plugins.participants.templates.participants.html, tpl);
+					var html = MM.tpl.render(MM.plugins.grading.templates.participants.html, tpl);
 						
                     var course = MM.db.get("courses", MM.config.current_site.id + "-" + courseId);
                     var pageTitle = "";
@@ -135,9 +147,9 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
                     }
 
 					if(showAllParticipant == 0)
-					MM.panels.show('center', "<a href='#course/contents/"+courseId+"'><img src='img/arrowleft.png'></a> <a href='#grading/participants/"+courseId+"/"+moduleId+"/1' > <button style='margin-left: 40%;'>"+ MM.lang.s('showall')+ "</button></a>"+html, {title: pageTitle});
+						MM.panels.show('center', "<a href='#course/contents/"+courseId+"'><img src='img/arrowleft.png'></a> <a href='#grading/participants/"+courseId+"/"+moduleId+"/1' > <button style='margin-left: 40%;'>"+ MM.lang.s('showall')+ "</button></a>"+html, {title: pageTitle});
 					else
-                    MM.panels.show('center', "<a href='#course/contents/"+courseId+"'><img src='img/arrowleft.png'></a> <a href='#grading/participants/"+courseId+"/"+moduleId+"/0'> <button style='margin-left: 40%;'> "+ MM.lang.s('submissions')+ "</button></a>"+html, {title: pageTitle});
+						MM.panels.show('center', "<a href='#course/contents/"+courseId+"'><img src='img/arrowleft.png'></a> <a href='#grading/participants/"+courseId+"/"+moduleId+"/0'> <button style='margin-left: 40%;'> "+ MM.lang.s('submissions')+ "</button></a>"+html, {title: pageTitle});
 					
 
 					
@@ -149,7 +161,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
                     else if (MM.deviceType == "tablet") {
 						if(users.length > 0){
 							$("#panel-center li:eq(0)").addClass("selected-row");
-							MM.plugins.grading.viewAssign(courseId, moduleId, users.shift().id,1);
+							MM.plugins.grading.loadAdminPage(courseId, moduleId);
 							$("#panel-center li:eq(0)").addClass("selected-row");
 							}
 						else{
@@ -200,6 +212,38 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
 
 						
                     });
+					
+					$(".grading .status_checkbox").on(MM.clickType, function(e){
+						e.preventDefault();
+						e.stopPropagation();
+						var userId = $(this).data("userid");
+						var gradingInfo =MM.db.get("grading_infos", courseId+"_"+moduleId+"_"+userId);
+						var currentLastClass = $(this).attr("class").split(" ").slice(-1).toString() ;
+						var test = $(this).attr("class");
+						var newStatus;
+						if(currentLastClass == "ended_grading" || currentLastClass == "in_progress_grading"){
+							$(this).removeClass(currentLastClass);
+							newStatus = "undefined";
+						}
+						else{
+							$(this).addClass("ended_grading");
+							newStatus = "ended";
+						}
+						
+						if($(this).parent().attr("class").split(" ").slice(-1).toString() == "selected-row"){
+							$("#grading_status .active").removeClass('active');
+							$("#grading_status #"+newStatus).addClass('active');						
+						}
+						if(gradingInfo){
+							MM.plugins.grading.updateGradingInfo(courseId,moduleId,userId,newStatus,gradingInfo.attributes.grade,gradingInfo.attributes.comment);
+						}
+						else{
+							MM.plugins.grading.updateGradingInfo(courseId,moduleId,userId,newStatus,null,null);
+						}
+						
+						
+					});
+			 
 
                 }, function(m) {
                     // Removing loading icon.
@@ -225,56 +269,69 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
 
             MM.moodleWSCall('moodle_user_get_users_by_courseid', data, 
 				function(users) {
-				    var params = {
-						"courseids[0]": courseId
-					};
-					if(showAllParticipant == 1){
-						successCallback(users);
-					}
-					else(
-				    MM.moodleWSCall("mod_assign_get_assignments",
-						params,
-						function(result) {
-							var course = result.courses.shift();
-							var currentAssign;
-							_.each(course.assignments, function(assign) {
-								if (assign.cmid == moduleId) {
-									currentAssign = assign;
-								}
-							});
-						
-
-							var params = {
-								"assignmentids[0]": currentAssign.id
-							};
-							MM.moodleWSCall("mod_assign_get_submissions", params,
-								// Success callback.
-								function(result) {
-									var wUsers = [];
-									_.each(result.assignments[0].submissions, function(submission) {
-										var text = MM.plugins.assign._getSubmissionText(submission);
-										var files = MM.plugins.assign._getSubmissionFiles(submission);
-										if (text != '' || files.length > 0){
-											_.each(users, function(user){
-												if(user.id == submission.userid)
-													wUsers.push(user);
-											});
-										}
-									});
-									successCallback(wUsers);
-								},
-								null,
-								function (error) {
-									MM.popErrorMessage(error);
-								}
-							);
-						
-						}, 
-						null, 
-						function(m) {
-							errorCallback(m);
+					//On recupère que les étudaints
+					var students = [];
+					_.each(users, function(user) {
+						if (user.roles[0].shortname == "student") {
+							students.push(user);
 						}
-					));
+					});
+					if(showAllParticipant == 1){
+						successCallback(students);
+					}
+					
+					else{
+						var params = {
+							"courseids[0]": courseId
+						};
+						//Récupérer le bon assign, puis les submissions pour avoir la listes des étudiants qui ont rendus quelque chose
+						MM.moodleWSCall("mod_assign_get_assignments",
+							params,
+							function(result) {
+								var course = result.courses.shift();
+								var currentAssign;
+								_.each(course.assignments, function(assign) {
+									if (assign.cmid == moduleId) {
+										currentAssign = assign;
+									}
+								});
+							
+
+								var params = {
+									"assignmentids[0]": currentAssign.id
+								};
+								MM.moodleWSCall("mod_assign_get_submissions", params,
+									// Success callback.
+									function(result) {
+										var studentWithSub = [];
+										//Search student who sent something
+										_.each(result.assignments[0].submissions, function(submission) {
+											var text = MM.plugins.assign._getSubmissionText(submission);
+											var files = MM.plugins.assign._getSubmissionFiles(submission);
+											if (text != '' || files.length > 0){
+												_.each(students, function(user){
+													if(user.id == submission.userid)
+														//On recupère que les etudiant avec devoir rendu ou avec brouillon après deadline
+														if(submission.status == "submitted" || submission.status == "draft" && MM.util.timestamp() > currentAssign.duedate)
+															studentWithSub.push(user);
+												});
+											}
+										});
+										successCallback(studentWithSub);
+									},
+									null,
+									function (error) {
+										MM.popErrorMessage(error);
+									}
+								);
+							
+							}, 
+							null, 
+							function(m) {
+								errorCallback(m);
+							}
+						)
+					};
 
 				},
 				null,
@@ -316,7 +373,186 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
                 }
             );
         },
+		
+		loadAdminPage: function(courseId, cmId) {
+		    // Loading ....
+            $("#info-" + cmId, "#panel-right").attr("src", "img/loadingblack.gif");
+			var tpl = {
+				'date': {},
+				'grading':{
+					'nbGrades': 0,
+					'nbComments': 0,
+					'grades':{}
+					},
+				'participants':{
+					'nbParticipants': 0,
+					'nbSubmitted': 0,
+					'nbDraft': 0,
+				}
+			};	
+			
+			var params = {
+                "courseids[0]": courseId
+            };
 
+            MM.moodleWSCall("mod_assign_get_assignments",
+                params,
+                function(result) {
+                    var course = result.courses.shift();
+                    var currentAssign;
+                    _.each(course.assignments, function(assign) {
+                        if (assign.cmid == cmId) {
+                            currentAssign = assign;
+                        }
+                    });
+                    if (currentAssign) {
+						var date ={}
+						date.duedate = currentAssign.duedate;
+						date.allowsubmissionsfromdate = currentAssign.allowsubmissionsfromdate;
+						date.cutoffdate = currentAssign.cutoffdate;		
+						tpl.date = date;
+						
+						
+						var data = {
+							"courseid" : courseId
+						};
+
+						MM.moodleWSCall('moodle_user_get_users_by_courseid', data, 
+							function(users) {
+								
+								
+								//On recupère que les étudaints
+								var students = [];
+								_.each(users, function(user) {
+									if (user.roles[0].shortname == "student") {
+										students.push(user);
+									}
+								});
+
+								tpl.participants.nbParticipants = students.length;
+								
+								
+								//On recupère les notes
+								
+								var grades = {};
+								grades.moy ="";
+								grades.max= "";
+								grades.min= "";
+								
+								//Now seach on Bd Grading Infos
+								var gradingInfos = MM.db.where("grading_infos", {courseId: parseInt(courseId), cmId: parseInt(cmId)} );
+								if(gradingInfos.length > 0){
+									_.each(gradingInfos, function(gradingInfo) {
+										if (gradingInfo.attributes.grades) {
+											if(grade.nbGrades == 0){
+												grades.moy = gradingInfo.attributes.grade;
+												grades.min = gradingInfo.attributes.grade;
+												grades.max = gradingInfo.attributes.grade;
+												tpl.grading.nbGrades += 1;
+											}
+											else{
+												grades.moy += gradingInfo.attributes.grade;
+												if(grades.min > gradingInfo.attributes.grade) grades.min = gradingInfo.attributes.grade;
+												if(grades.max < gradingInfo.attributes.grade) grades.max = gradingInfo.attributes.grade;
+												tpl.grading.nbGrades += 1;
+											}
+										}
+										if(gradingInfo.attributes.comment && gradingInfo.attributes.comment != ""){
+											tpl.grading.nbComments +=1;
+										}
+									});
+									if(tpl.grading.nbGrades > 0)grades.moy /= tpl.grading.nbGrades;
+								}
+								tpl.grading.grades = grades;
+								
+								
+								//on recupère les rendus
+								var params = {
+									"assignmentids[0]": currentAssign.id
+								};	
+					
+								MM.moodleWSCall("mod_assign_get_submissions",
+									params,
+									// Success callback.
+									function(result) {
+										// Stops loading...
+										$("#info-" + currentAssign.cmid, "#panel-right").attr("src", "img/info.png");
+
+										var sectionName = "";
+										if (MM.plugins.assign.sectionsCache[currentAssign.cmid]) {
+											sectionName = MM.plugins.assign.sectionsCache[currentAssign.cmid];
+										}
+
+										var pageTitle = '<div id="back-arrow-title" class="media">\
+												<div class="img app-ico">\
+													<img src="img/mod/assign.png" alt="img">\
+												</div>\
+												<div class="bd">\
+													<h2>' + MM.util.formatText(currentAssign.name) + '</h2>\
+												</div>\
+											</div>';
+											
+										tpl.participants.nbSubmitted = 0;
+										tpl.participants.nbDraft = 0;
+										var assign = result.assignments.shift();
+										
+										//on parcourt les rendus
+										_.each(assign.submissions, function(submission) {
+											
+											//si le rendu est définitif
+											if (submission.status == "submitted") {
+												//on verifie que c'est le rendu d'un étudiant
+												_.each(students, function(student) {
+													if (submission.userid == student.id) {
+														tpl.participants.nbSubmitted += 1;
+													}
+												});
+											}
+											//si c'est un brouillon
+											else if(submission.status == "draft") {
+											//on verifie que c'est le rendu d'un étudiant
+												_.each(students, function(student) {
+													if (submission.userid == student.id) {
+														tpl.participants.nbDraft += 1;
+													}
+												});
+											}
+										});
+										
+										
+										//then render page
+										
+										MM.plugins.grading._renderAdminPage(tpl, pageTitle);
+																		
+									},
+									null,
+									function (error) {
+										$("#info-" + cmId, "#panel-right").attr("src", "img/info.png");
+										MM.popErrorMessage(error);
+									}
+								);
+							},
+							null,
+							function (error) {
+								$("#info-" + cmId, "#panel-right").attr("src", "img/info.png");
+								MM.popErrorMessage(error);
+							}
+						);
+					}
+				},
+				null,
+				function (error) {
+					$("#info-" + cmId, "#panel-right").attr("src", "img/info.png");
+					MM.popErrorMessage(error);
+				}
+			);
+		},
+        _renderAdminPage: function(tpl, pageTitle) {		
+			var html = MM.tpl.render(MM.plugins.grading.templates.adminPage.html, tpl);
+			MM.panels.show('right', html, {title: pageTitle});
+			
+		},
+		
         /**
          * Display submissions of a assign
          * @param  {Object} assign assign object
@@ -482,6 +718,8 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
 									dataGrade.comment = gradingInfo.comment;
 									dataGrade.grade = gradingInfo.grade;
 								}
+								
+								
 								data.gradingForm = MM.tpl.render(MM.plugins.grading.templates.gradingForm.html, dataGrade);
 								MM.plugins.grading._renderGradingPage(data, pageTitle);
 								
@@ -564,31 +802,26 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
 			
 			//Grading status
 			
+
 			$("#grading_status .status").on(MM.clickType, function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-				$('#sending_status').attr("src", "img/loadingblack.gif");
+				
 				$("#grading_status .status").removeClass( "active" );
-				var newStatus = $(this).attr("id");
-				var grade = MM.plugins.grading.newGrade();
-				if (typeof grade === "undefined") {
-					var gradingInfo =MM.db.get("grading_infos", data.assign.course+"_"+data.assign.cmid+"_"+data.user.userid);
-					if(gradingInfo){
-						grade = gradingInfo.attributes.grade;
-					}
-				} 
-				var gradingInfo = {
-					id: data.assign.course+"_"+data.assign.cmid+"_"+data.user.userid,
-					courseId: data.assign.course,
-					cmId: data.assign.cmid,
-					userId: data.user.userid,
-					status: newStatus,
-					grade: grade,
-					comment: MM.plugins.grading.newFeedBack()
-				};
-				MM.db.insert("grading_infos", gradingInfo);
+				
+				$(".users-index-list .selected-row .status_checkbox").removeClass("undefined_grading");
+				$(".users-index-list .selected-row .status_checkbox").removeClass("in_progress_grading");
+				$(".users-index-list .selected-row .status_checkbox").removeClass("ended_grading");
+				var newStatus = $(this).attr("id");		
+				var grade = MM.plugins.grading.newGrade(data.assign.course,data.assign.cmid,data.user.userid);
+				var comment = MM.plugins.grading.newFeedBack();
+				MM.plugins.grading.updateGradingInfo(data.assign.course,data.assign.cmid,data.user.userid,newStatus,grade,comment);
+				
 				$(this).addClass("active");
-				$('#sending_status').attr("src", "img/received.png");
+				
+				
+				$(".users-index-list .selected-row .status_checkbox").addClass(newStatus+"_grading");
+				
 			});
 			
 			
@@ -597,27 +830,26 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
                 e.preventDefault();
                 e.stopPropagation();
 				$('#sending_status').attr("src", "img/loadingblack.gif");
-				
 				var status = $("#grading_status .active").attr("id");
-				var grade = MM.plugins.grading.newGrade();
-				if (typeof grade === "undefined") {
-					var gradingInfo =MM.db.get("grading_infos", data.assign.course+"_"+data.assign.cmid+"_"+data.user.userid);
-					if(gradingInfo){
-						grade = gradingInfo.attributes.grade;
-					}
-				} 
-				var gradingInfo = {
-					id: data.assign.course+"_"+data.assign.cmid+"_"+data.user.userid,
-					courseId: data.assign.course,
-					cmId: data.assign.cmid,
-					userId: data.user.userid,
-					status: status,
-					grade: grade,
-					comment: MM.plugins.grading.newFeedBack()
-				};
-				MM.db.insert("grading_infos", gradingInfo);
+				var grade = MM.plugins.grading.newGrade(data.assign.course,data.assign.cmid,data.user.userid);
+				var comment = MM.plugins.grading.newFeedBack();
+				
+				MM.plugins.grading.updateGradingInfo(data.assign.course,data.assign.cmid,data.user.userid,status,grade,comment);
 				
 				$('#sending_status').attr("src", "img/received.png");
+				
+
+			});
+			
+			//Automatic update
+			$( "#grading #feedback_grade , #grading #feedback_comment" ).focusout(MM.clickType, function(e)  {
+			    e.preventDefault();
+                e.stopPropagation();
+				var status = $("#grading_status .active").attr("id");
+				var grade = MM.plugins.grading.newGrade(data.assign.course,data.assign.cmid,data.user.userid);
+				var comment = MM.plugins.grading.newFeedBack();
+				MM.plugins.grading.updateGradingInfo(data.assign.course,data.assign.cmid,data.user.userid, status,grade,comment);
+				
 			});
 			
 			
@@ -654,14 +886,35 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
 			});
         },
 		
-		newGrade: function() {
+		updateGradingInfo: function(courseId,moduleId,userId,status,grade,comment){
+			var gradingInfo = {
+				id: courseId+"_"+moduleId+"_"+userId,
+				courseId: courseId,
+				cmId: moduleId,
+				userId: userId,
+				status: status,
+				grade: grade,
+				comment: comment,
+			};
+			MM.db.insert("grading_infos", gradingInfo);
+		},
+		
+		newGrade: function(courseId,cmId,userId) {
 			var result;
 			var grade = $("#feedback_grade").val();
 			grade = parseFloat(grade);
-			if(!isNaN(grade))
+			if(!isNaN(grade)){
 				result = grade;
+			}
+			else{
+				var gradingInfo =MM.db.get("grading_infos", courseId+"_"+cmId+"_"+userId);
+				if(gradingInfo){
+					result = gradingInfo.attributes.grade;
+				}			
+			}
 			return result;
 		},
+		
 		
 		newFeedBack: function() {
 			var comment = $("#feedback_comment").val();
@@ -675,6 +928,15 @@ define(templates,function (gradingPageTpl,gradingFormTpl) {
             },
 			"gradingForm": {
                 html: gradingFormTpl
+            },
+			"participants": {
+                html: participantsTpl
+            },
+			"participantsRow": {
+                html: participantsRowTpl
+            },
+			"adminPage": {
+                html: adminPageTpl
             }
         }
     };

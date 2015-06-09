@@ -1,0 +1,20 @@
+    <section class="grading users-index-list">
+        <!--<form class="search">
+            <input type="search" results="5" placeholder="Search...">
+        </form>-->
+        <ul class="nav nav-v">
+			<% if (typeof moduleId === "undefined") { %>
+				<%	moduleId = -1 %>
+			<% } %>
+				
+				<%= MM.tpl.render(MM.plugins.grading.templates.participantsRow.html, {"courseId": courseId, "users": users, "moduleId": moduleId}) %>
+        </ul>
+        <ul id="participants-additional" class="nav nav-v">
+
+        </ul>
+    </section>
+    <% if (showMore) { %>
+    <div class="centered">
+        <button id="participants-showmore"><%= MM.lang.s("showmore") %></button>
+    </div>
+    <% } %>

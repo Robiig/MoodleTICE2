@@ -1,0 +1,79 @@
+<% if(device == "phone") { %>
+	<div class="header-sub">
+
+		<div class="back-row">
+			
+				<a onclick="window.history.back();"><img src="img/arrowleft.png"></a>
+			
+		</div>
+		<div id="back-arrow-title" class="media">
+			<div class="img app-ico">
+				<img src="img/mod/assign.png" alt="img">
+			</div>
+			<div class="bd">
+				<h2><%= MM.util.formatText(assign.name)%></h2>
+			</div>
+		</div>
+	</div>
+<% } %>	
+<div class="content-index">
+
+<center>Administration du devoir</center>
+    <div class="path-mod-assign">
+        <div class="assign">
+            <div class="info">
+
+                <% if (date.allowsubmissionsfromdate) { %>
+                    <p>
+                        <span><%= MM.lang.s('allowsubmissionsfromdate') %></span>
+                        <time><%= MM.util.timestampToUserDate(date.allowsubmissionsfromdate) %></time>
+                    </p>
+                <% } %>
+
+                <p>
+                <% if (date.duedate) { %>
+                        <span><%= MM.lang.s('duedate') %></span>
+                        <time><%= MM.util.timestampToUserDate(date.duedate) %></time>
+                <% } else { %>
+                        <%= MM.lang.s('duedateno') %>
+                <% } %>
+                </p>
+
+                <% if (date.cutoffdate) { %>
+                    <p>
+                        <span><%= MM.lang.s('cutoffdate') %></span>
+                        <time><%= MM.util.timestampToUserDate(date.cutoffdate) %></time>
+                    </p>
+                <% } %>
+				<br/>
+				
+				
+				
+				<table id="gradingInfosTable">
+					<tr>
+						<th><%= MM.lang.s('participants') %></th><th><%= MM.lang.s('submissions')%></th><th><%= MM.lang.s('endedcorrections') %></th>
+					</tr>
+					<tr>
+						<td>5</td><td>3</td><td>2</td>
+					</tr>
+				</table>
+				
+				<br/>
+				
+				 <p>
+                        <span>Devoirs notés :</span>
+						<span>0</span>
+                </p>
+				<p>
+                        <span></span>
+						<span>(moy: , min: , max: )</span>
+                </p>
+				 <p>
+                        <span>Devoirs commentés:</span>
+						<span>1</span>               						
+				</p>
+
+            </div>
+		</div>
+	</div>
+</div>
