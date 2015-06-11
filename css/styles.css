@@ -1984,11 +1984,11 @@ cursor: pointer;
   background-image: url(../img/received.png);
   background-repeat: no-repeat;
   background-position: center;
-  background-size: cover;
+   /* background-size: cover; */
 }  
  .grading .status_checkbox.in_progress_grading {
   background-image: url(../img/time.png);
   background-repeat: no-repeat;
   background-position: center;
-  background-size: cover;
+  /* background-size: cover; */
 }  

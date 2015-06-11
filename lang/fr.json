@@ -173,6 +173,7 @@
 	"nopermissionstograding": "Vous n'êtes pas autorisé à corriger ce cours",
     "norefreshdisconnected": "L'option d'actualisation requiert une connexion réseau",
 	"nosubmissions": "Aucun devoirs rendus",
+	"nosyncdisconnected": "Vous devez être connecté à internet pour synchroniser",
     "notaskstobesynchronized": "Aucune tâche à synchroniser",
     "noteadded": "Note ajoutée",
     "noticelargefile": "La taille du fichier que vous voulez télécharger est grande et son téléchargement durera longtemps.",

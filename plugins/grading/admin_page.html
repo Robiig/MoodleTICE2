@@ -54,26 +54,57 @@
 						<th><%= MM.lang.s('participants') %></th><th><%= MM.lang.s('submissions')%></th><th><%= MM.lang.s('endedcorrections') %></th>
 					</tr>
 					<tr>
-						<td>5</td><td>3</td><td>2</td>
+						<td>
+								<%=participants.nbParticipants%></td>
+						<td>
+							<% var timeOver = MM.util.timestamp() > date.duedate; %>
+							
+									<%= participants.nbSubmitted %> 
+							<% if(timeOver) { %>
+									(+ <%= participants.nbDraft %> brouillons)
+							<% } %>
+						</td>
+						<td id="EndedGradingNumber">
+							<%=grading.nbEndedGrading%>
+						</td>
 					</tr>
 				</table>
 				
 				<br/>
 				
 				 <p>
-                        <span>Devoirs notés :</span>
-						<span>0</span>
-                </p>
+					<span>
+						Devoirs notés :
+					</span>
+					<span> 
+						<%=grading.nbGrades%>
+					</span>
+					<span>
+						(moy: <%=grading.grades.moy%> / max: <%=grading.grades.max%> / min: <%=grading.grades.min%>  )
+					</span>
+					
+				</p>
 				<p>
-                        <span></span>
-						<span>(moy: , min: , max: )</span>
-                </p>
-				 <p>
-                        <span>Devoirs commentés:</span>
-						<span>1</span>               						
+					<span>
+						Devoirs commentés:
+					</span>
+					<span> 
+						<%=grading.nbComments%>   
+					</span>          						
 				</p>
 
             </div>
 		</div>
+		<h3><center>Envoi des corrections<center></h3>
+		<div id="send_grading"><br/><br/><center>
+			<form>
+				<label for="send_ended">Corrections terminées</label> 
+				<input type= "radio" name="send" value="ended" id="send_ended" checked>
+				<input type= "radio" name="send" value="all" id="send_all"> 
+				<label for="send_all">Tout envoyer</label>
+			</form>
+			<br/><br/>
+			<button id="sending_button"><%= MM.lang.s('synchronize') %></button>
+			</center>
 	</div>
 </div>

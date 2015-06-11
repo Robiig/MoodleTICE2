@@ -239,7 +239,9 @@ define(templates, function (assignTpl, submissionsTpl) {
             $("#download_all_files").on(MM.clickType, function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-
+				
+				data.assign.duedate;
+				
 				$(".toDownload").each(function(){
 				    var url = $(this).data("downloadurl");
 					var filename = $(this).data("filename");

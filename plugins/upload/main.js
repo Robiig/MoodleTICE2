@@ -93,6 +93,7 @@ define(requires, function (uploadFileTpl) {
         },
 
         recordAudio: function() {
+		alert('');
             MM.Router.navigate("");
             MM.log('Trying to record and Audio', 'Upload');
             navigator.device.capture.captureAudio(MM.plugins.upload.recordAudioSuccess, MM.plugins.upload.recordAudioFails, {limit: 1});

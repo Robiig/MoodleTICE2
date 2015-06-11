@@ -66,7 +66,7 @@
 							<% var files = MM.plugins.assign._getSubmissionFiles(submission); %>
 							
 							<% if(files.length > 0 && files[0].localpath){
-								var folderFilesPath = (files[0].localpath).replace(files[0].filepath,"/");
+								var folderFilesPath = (files[0].localpath).replace(files[0].filepath,"");
 							} %>
 
 							<% if (text != '') { %>

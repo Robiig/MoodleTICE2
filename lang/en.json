@@ -175,6 +175,7 @@
 "nopermissionstograding": "You have not the permission to grading this course",
 "norefreshdisconnected": "The refresh option requires network connection",
 "nosubmissions": "No submissions",
+"nosyncdisconnected": "You should be connected to interned to synchronise",
 "notaskstobesynchronized": "No tasks to be synchronized",
 "noteadded": "Note added",
 "noticelargefile": "Please note that the file you are requesting to download is large and may take some time to complete.",

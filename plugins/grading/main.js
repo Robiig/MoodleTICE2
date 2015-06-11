@@ -219,7 +219,6 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 						var userId = $(this).data("userid");
 						var gradingInfo =MM.db.get("grading_infos", courseId+"_"+moduleId+"_"+userId);
 						var currentLastClass = $(this).attr("class").split(" ").slice(-1).toString() ;
-						var test = $(this).attr("class");
 						var newStatus;
 						if(currentLastClass == "ended_grading" || currentLastClass == "in_progress_grading"){
 							$(this).removeClass(currentLastClass);
@@ -233,6 +232,13 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 						if($(this).parent().attr("class").split(" ").slice(-1).toString() == "selected-row"){
 							$("#grading_status .active").removeClass('active');
 							$("#grading_status #"+newStatus).addClass('active');						
+						}
+						else if($("#panel-center li:eq(0)").attr("class").split(" ").slice(-1).toString() == "selected-row"){
+							var value = $(".info #EndedGradingNumber").html();
+							value = parseInt(value);
+							if(newStatus == "ended") value +=1;
+							else if (currentLastClass == "ended_grading") value -= 1;
+							$(".info #EndedGradingNumber").html(value);
 						}
 						if(gradingInfo){
 							MM.plugins.grading.updateGradingInfo(courseId,moduleId,userId,newStatus,gradingInfo.attributes.grade,gradingInfo.attributes.comment);
@@ -432,19 +438,23 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 								tpl.participants.nbParticipants = students.length;
 								
 								
-								//On recupère les notes
+								//Pour les notes
 								
 								var grades = {};
 								grades.moy ="";
 								grades.max= "";
 								grades.min= "";
 								
+								
+								//Pour le nombre de correction terminées
+								
+								var EndedGrading = 0;
 								//Now seach on Bd Grading Infos
 								var gradingInfos = MM.db.where("grading_infos", {courseId: parseInt(courseId), cmId: parseInt(cmId)} );
 								if(gradingInfos.length > 0){
 									_.each(gradingInfos, function(gradingInfo) {
-										if (gradingInfo.attributes.grades) {
-											if(grade.nbGrades == 0){
+										if (gradingInfo.attributes.grade) {
+											if(tpl.grading.nbGrades == 0){
 												grades.moy = gradingInfo.attributes.grade;
 												grades.min = gradingInfo.attributes.grade;
 												grades.max = gradingInfo.attributes.grade;
@@ -460,11 +470,14 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 										if(gradingInfo.attributes.comment && gradingInfo.attributes.comment != ""){
 											tpl.grading.nbComments +=1;
 										}
+										if(gradingInfo.attributes.status && gradingInfo.attributes.status == "ended")
+											EndedGrading += 1;
 									});
+									
 									if(tpl.grading.nbGrades > 0)grades.moy /= tpl.grading.nbGrades;
 								}
 								tpl.grading.grades = grades;
-								
+								tpl.grading.nbEndedGrading = EndedGrading;
 								
 								//on recupère les rendus
 								var params = {
@@ -523,7 +536,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 										//then render page
 										
 										MM.plugins.grading._renderAdminPage(tpl, pageTitle);
-																		
+																						
 									},
 									null,
 									function (error) {
@@ -547,10 +560,29 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 				}
 			);
 		},
+		
+		
         _renderAdminPage: function(tpl, pageTitle) {		
 			var html = MM.tpl.render(MM.plugins.grading.templates.adminPage.html, tpl);
 			MM.panels.show('right', html, {title: pageTitle});
 			
+			//Jquery
+			$("#sending_button").on(MM.clickType, function(e)  {
+				e.preventDefault();
+				e.stopPropagation();
+				if(MM.deviceConnected()){
+					var sendWay = $("input[type=radio][name=send]:checked").val();
+					if(sendWay== "ended"){
+						MM.popConfirm("Confirmez-vous la syncronisation de toutes les corrections terminées ?<br/>(Les étudiants concernés pourrons consulter leurs corrections)",null ,null );
+					}
+					else if(sendWay== "all"){
+						MM.popConfirm("Confirmez vous la syncronisation de toutes les corrections ? <br/>(Les étudiants concernés pourrons consulter leurs corrections)",null ,null );
+					}
+				}
+				else{
+					MM.popErrorMessage(MM.lang.s('nosyncdisconnected'));
+				}
+			});
 		},
 		
         /**
@@ -889,9 +921,9 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 		updateGradingInfo: function(courseId,moduleId,userId,status,grade,comment){
 			var gradingInfo = {
 				id: courseId+"_"+moduleId+"_"+userId,
-				courseId: courseId,
-				cmId: moduleId,
-				userId: userId,
+				courseId: parseInt(courseId),
+				cmId: parseInt(moduleId),
+				userId: parseInt(userId),
 				status: status,
 				grade: grade,
 				comment: comment,
@@ -902,15 +934,21 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 		newGrade: function(courseId,cmId,userId) {
 			var result;
 			var grade = $("#feedback_grade").val();
-			grade = parseFloat(grade);
-			if(!isNaN(grade)){
-				result = grade;
+			if(grade.trim() == ""){
+				result = null;
 			}
 			else{
-				var gradingInfo =MM.db.get("grading_infos", courseId+"_"+cmId+"_"+userId);
-				if(gradingInfo){
-					result = gradingInfo.attributes.grade;
-				}			
+				grade = parseFloat(grade);
+				if(!isNaN(grade)){
+					result = grade;
+				}
+			
+				else{
+					var gradingInfo =MM.db.get("grading_infos", courseId+"_"+cmId+"_"+userId);
+					if(gradingInfo){
+						result = gradingInfo.attributes.grade;
+					}			
+				}
 			}
 			return result;
 		},
