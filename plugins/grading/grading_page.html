@@ -66,8 +66,14 @@
 							<% var files = MM.plugins.assign._getSubmissionFiles(submission); %>
 							
 							<% if(files.length > 0 && files[0].localpath){
-								var folderFilesPath = (files[0].localpath).replace(files[0].filepath,"");
+								alert(files[0].filepath);
+								alert(files[0].localpath);
+								var filePathUrl = encodeURI(encodeURI(files[0].filepath));
+								alert(filePathUrl);
+								var folderFilesPath = (files[0].localpath).replace(filePathUrl,"");
+								alert(folderFilesPath);
 							} %>
+							
 
 							<% if (text != '') { %>
 								<p><a href="#" class="submissiontext" data-submissionid="<%= submission.id %>"><%= MM.lang.s('viewsubmission') %></a></p>

@@ -69,9 +69,17 @@
                 <% } %>
 
                 <p>
+				
                 <% if (assign.duedate) { %>
+						<% var timeOver = MM.util.timestamp() > assign.duedate; %>
                         <span><%= MM.lang.s('duedate') %></span>
-                        <time><%= MM.util.timestampToUserDate(assign.duedate) %></time>
+                        <time
+							<% if(!timeOver) { %> 
+							style="color: red;"
+							<% } %>
+							
+						><%= MM.util.timestampToUserDate(assign.duedate) %></time>
+						
                 <% } else { %>
                         <%= MM.lang.s('duedateno') %>
                 <% } %>
@@ -104,7 +112,7 @@
 		
         <h3><%= MM.lang.s('submissions') %></h3>
 		
-		<% var timeOver = MM.util.timestamp() > assign.duedate; %>
+		
         <% _.each(submissions, function(submission) { %>
 			<% if(submission.status == "submitted" || submission.status == "draft" && timeOver){ %> 
 		

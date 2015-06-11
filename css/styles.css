@@ -258,7 +258,7 @@ hr {
 }
 
 
-.users-index-list .nav-item:hover {
+.users-index-list .nav-item a.touch-row:hover {
   background-color: rgb(251, 236, 183);
 }
 

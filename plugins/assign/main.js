@@ -240,15 +240,19 @@ define(templates, function (assignTpl, submissionsTpl) {
                 e.preventDefault();
                 e.stopPropagation();
 				
-				data.assign.duedate;
+				if(data.assign.duedate > MM.util.timestamp()){
+					MM.popConfirm("Les étudiants ont encore jusqu'au "+ MM.util.timestampToUserDate(data.assign.duedate)+ " pour rendre leurs devoirs <br/> Etes-vous sur de vouloir tout télécharger ?", function(){
+						$(".toDownload").each(function(){
+							var url = $(this).data("downloadurl");
+							var filename = $(this).data("filename");
+							var attachmentId = $(this).data("attachmentid");
+							MM.plugins.assign._downloadFile(url, filename, attachmentId);
+						})
+					}
+					,null );
 				
-				$(".toDownload").each(function(){
-				    var url = $(this).data("downloadurl");
-					var filename = $(this).data("filename");
-					var attachmentId = $(this).data("attachmentid");
-					MM.plugins.assign._downloadFile(url, filename, attachmentId);
-				})
-
+				}
+				
             });
 			
 		
