@@ -68,7 +68,7 @@
 							<% if(files.length > 0 && files[0].localpath){
 								alert(files[0].filepath);
 								alert(files[0].localpath);
-								var filePathUrl = encodeURI(encodeURI(files[0].filepath));
+								var filePathUrl = encodeURI(files[0].filepath);
 								alert(filePathUrl);
 								var folderFilesPath = (files[0].localpath).replace(filePathUrl,"");
 								alert(folderFilesPath);
