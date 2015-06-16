@@ -71,8 +71,8 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 						
 						else						
 							//no permissions
-							
-							MM.plugins.grading.viewAssign(courseId, moduleId, MM.config.current_site.userid);			
+							MM.popErrorMessage("Vous n'avez pas les permissions nécessaires pour corriger ce devoir");
+							//MM.plugins.grading.viewAssign(courseId, moduleId, MM.config.current_site.userid);			
 							
 							
 						},{},
@@ -665,17 +665,23 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
                         // In this case, we would need additional information (like pre-fetching the course participants).
 
 						var params = {
-						'userids[0]': userId };
+							"courseid" : assign.course
+						};
 
 						
-						MM.moodleWSCall('moodle_user_get_users_by_id', params, function(user) {
-
-										
+						MM.moodleWSCall('moodle_user_get_users_by_courseid', params, function(users) {
+						var currentUser ;
+							users.forEach(function(user) {
+								if(user.id = userId){
+									currentUser = user;
+								}
+							});
+									
 							newUser = {
-								'id': MM.config.current_site.id + '-' + user[0].id,
-								'userid': user[0].id,
-								'fullname': user[0].fullname,
-								'profileimageurl': user[0].profileimageurl
+								'id': MM.config.current_site.id + '-' + currentUser.id,
+								'userid': currentUser.id,
+								'fullname': currentUser.fullname,
+								'profileimageurl': currentUser.profileimageurl
 							};
 
 							data.user = newUser;
@@ -685,7 +691,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 								"userids[0]" : data.user.userid
 							}
 
-							if(MM.util.wsAvailable('core_grades_update_grades')){
+							//if(MM.util.wsAvailable('core_grades_update_grades')){
 							/* CECI EST LE CODE POUR CHARGER LES NOTES ET COMMENTAIRES DEPUIS LE SERVEUR
 							
 								MM.moodleWSCall('core_grades_get_grades', paramsGradingForm, function(p) {
@@ -756,12 +762,13 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 								data.gradingForm = MM.tpl.render(MM.plugins.grading.templates.gradingForm.html, dataGrade);
 								MM.plugins.grading._renderGradingPage(data, pageTitle);
 								
-							}	
-							else{
-								// Render the grading page without grading form (unavailable)
-								data.gradingForm = "<p>Formulaire d'évaluation indisponible</p><br/><p>Merci de réessayer plus tard</p>";
-								MM.plugins.grading._renderGradingPage(data, pageTitle);
-							}
+							//}	
+							//else{
+								
+								//Render the grading page without grading form (unavailable)
+								//data.gradingForm = "<p>Formulaire d'évaluation indisponible</p><br/><p>Merci de réessayer plus tard</p>";
+								//MM.plugins.grading._renderGradingPage(data, pageTitle);
+							//}
 							
 						}, null, function(m) {
 							MM.popErrorMessage(m);
