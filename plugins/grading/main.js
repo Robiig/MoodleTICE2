@@ -738,7 +738,9 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 								if(gradingInfo){
 									data.status = gradingInfo.attributes.status;
 									dataGrade.comment = gradingInfo.attributes.comment;
-									dataGrade.grade = gradingInfo.attributes.grade;
+									if(gradingInfo.attributes.grade<0)dataGrade.grade = null;
+									else dataGrade.grade = gradingInfo.attributes.grade;
+									
 
 								}
 									//sinon, on les défini
@@ -755,7 +757,8 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 									};
 
 									dataGrade.comment = gradingInfo.comment;
-									dataGrade.grade = gradingInfo.grade;
+									if(gradingInfo.grade<0)dataGrade.grade = null;
+									else dataGrade.grade = gradingInfo.grade;
 								}
 								
 								
