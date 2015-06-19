@@ -178,7 +178,7 @@ define(templates, function (assignTpl, submissionsTpl) {
 								//keep only student
 								var students = [];
 								_.each(users, function(user) {
-									if (user.roles[0].shortname == "student") {
+									if (typeof(user.roles[0]) != "undefined" && user.roles[0].shortname == "student") {
 										students.push(user);
 									}
 								});
@@ -250,7 +250,15 @@ define(templates, function (assignTpl, submissionsTpl) {
 						})
 					}
 					,null );
+				}
 				
+				else{
+						$(".toDownload").each(function(){
+							var url = $(this).data("downloadurl");
+							var filename = $(this).data("filename");
+							var attachmentId = $(this).data("attachmentid");
+							MM.plugins.assign._downloadFile(url, filename, attachmentId);
+						});
 				}
 				
             });

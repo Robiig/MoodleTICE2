@@ -278,7 +278,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 					//On recupère que les étudaints
 					var students = [];
 					_.each(users, function(user) {
-						if (user.roles[0].shortname == "student") {
+						if (typeof(user.roles[0]) != "undefined" && user.roles[0].shortname == "student") {
 							students.push(user);
 						}
 					});
@@ -430,7 +430,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 								//On recupère que les étudaints
 								var students = [];
 								_.each(users, function(user) {
-									if (user.roles[0].shortname == "student") {
+									if (typeof(user.roles[0]) != "undefined" && user.roles[0].shortname == "student") {
 										students.push(user);
 									}
 								});
@@ -573,10 +573,10 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 				if(MM.deviceConnected()){
 					var sendWay = $("input[type=radio][name=send]:checked").val();
 					if(sendWay== "ended"){
-						MM.popConfirm("Confirmez-vous la syncronisation de toutes les corrections terminées ?<br/>(Les étudiants concernés pourrons consulter leurs corrections)",null ,null );
+						MM.popConfirm("Confirmez-vous la syncronisation de toutes les corrections terminées ?<br/>(Les étudiants concernés pourrons consulter leurs corrections)", function(){} ,null );
 					}
 					else if(sendWay== "all"){
-						MM.popConfirm("Confirmez vous la syncronisation de toutes les corrections ? <br/>(Les étudiants concernés pourrons consulter leurs corrections)",null ,null );
+						MM.popConfirm("Confirmez vous la syncronisation de toutes les corrections ? <br/>(Les étudiants concernés pourrons consulter leurs corrections)", function(){} ,null );
 					}
 				}
 				else{
@@ -672,7 +672,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 						MM.moodleWSCall('moodle_user_get_users_by_courseid', params, function(users) {
 						var currentUser ;
 							users.forEach(function(user) {
-								if(user.id = userId){
+								if(user.id == userId){
 									currentUser = user;
 								}
 							});
@@ -749,7 +749,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 										cmId: data.assign.cmid,
 										userId: data.user.userid,
 										status: "undefined",
-										grade: null,
+										grade: -1,
 										comment: null,
 										itemId: null
 									};
@@ -901,45 +901,17 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 				if(MM.deviceConnected()){
 	
 					MM.popConfirm("Confirmez-vous la syncronisation ?<br/>(L'étudiant concerné pourra consulter la correction)",function(){ 
+					var courseId = data.assign.course;
+					var cmId = data.assign.cmid;
+					var assignId = data.assign.id;
+					var currentSub = [];
+					_.each(data.submissions, function(submission) {
+						if(submission.userid == data.user.userid){
+							currentSub[0] = submission;
+						}
+					});
 					
-						var params = {
-
-							"contextlevel": "user",
-							"instanceid": MM.config.current_site.userid,
-							"component": "user",
-							"filearea": "draft",
-							"itemid": -1,
-
-							
-						};
-
-						
-						
-						MM.moodleWSCall('core_files_upload', params, function(file){			
-							var itemId = file.itemid;						
-						},null,function(error){
-						});
-						
-								//find localFiles
-					/*	var currentSub;
-						_.each(data.submissions, function(sub){
-							if(sub.userid == data.user.userid){
-								currentSub = sub;
-							}					
-						});
-						var localFiles = MM.plugins.grading._getLocalSubmissionFiles(currentSub);
-						var itemId;
-						var userGradingInfos = MM.db.get("grading_infos", data.assign.course+"_"+data.assign.cmid+"_"+data.user.userid);
-						if(userGradingInfos){
-							itemId = userGradingInfos.attributes.itemId;
-						}
-						if (localFiles && localFiles.length > 0){
-							MM.plugins.grading.sendLocalSubmissionsFilesinDraft(data.assign,localFiles,data.user.userid, itemId);
-							MM.plugins.grading.sendFeedBack(data.assign, data.user.userid);
-						}
-						else
-							MM.plugins.grading.sendFeedBack(data.assign, data.user.userid);
-						*/
+					MM.plugins.grading.sendFeedBack(assignId, courseId, cmId, currentSub);
 						
 					},null );
 					
@@ -949,106 +921,320 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 			});
         },
 		
-		/*
-		sendFeedBack: function(assign, userId){
-			var userId = 0 || userId;
+		sendFeedBack(assignId,courseId, cmId, submissions, currentSubNum, currentFileNum, grades, errors){
+			var currentSubNum = currentSubNum || 0;
+			var currentFileNum = currentFileNum ||0;
+			var grades = grades || [];
+			var errors = errors ||[];
 			
-			//Récuperer les données utilisateurs concernées
-			var gradingInfos = [];
-			if (userId != 0 ){
-				var userGradingInfos = MM.db.get("grading_infos", assign.course+"_"+assign.cmid+"_"+userId);
-				if(userGradingInfos){
-					gradingInfos[0] = userGradingInfos;
+			if(typeof(submissions) != "undefined" && submissions.length > 0 && currentSubNum < submissions.length){
+				var currentSub = submissions[currentSubNum];
+				var localFiles = MM.plugins.grading._getLocalSubmissionFiles(currentSub);
+				var gradingInfo = MM.db.get("grading_infos", courseId+"_"+cmId+"_"+currentSub.userid);
+				var itemId = -1;
+				if(gradingInfo.attributes.itemId != null){
+					itemId = gradingInfo.attributes.itemId;
 				}
-			}
-			else{
-				gradingInfos = MM.db.where("grading_infos", {courseId: parseInt(assign.course), cmId: parseInt(assign.cmid)} );
-			}
-			
-			var grades = [];
-			var params = {
-				"assignmentids[0]": assign.id
-			};
-			if(gradingInfos.length > 0){
-				//Parcourt des données (utilisateurs par utilisateurs)
 				
-				MM.moodleWSCall("mod_assign_get_submissions", params,
+				if(localFiles.length > currentFileNum){
+					var currentFile = localFiles[currentFileNum];
 					
-					function(result) {
-						var submissions = result.assignments[0].submissions;
-						var elems = 0;
-						_.each(gradingInfos, function(gradingInfo) {
+
+					var filePath = currentFile.localpath.replace("filesystem:file:///persistent/", "");
+					filePath =  decodeURI(decodeURI(filePath));
+					MM.fs.findFileAndGetContentsIn64(filePath, function(file){
+					
+						var beginRange = currentFile.filepath.lastIndexOf('/')+1; // Plus 1 car on ne veut pas le '/'. 
+						var endRange = currentFile.filepath.length; 
+						var fileName = currentFile.filepath.substring(beginRange, endRange); 
+						var filePath = currentFile.filepath.substring(0, beginRange); 			
 						
-							var currentSub;
-							//recuperer submission de l'utilisateur pour le devoir
-							_.each(submissions, function(sub){
-								if(sub.userid == gradingInfo.attributes.userId){
-									currentSub = sub;
-								}					
-							});
-							
-							if(currentSub){
-								var itemId = null;
-								if(gradingInfo.itemId != null){
-									itemId = gradingInfo.itemId;
-								}
+						var params = {
+
+							"contextlevel": "user",
+							"instanceid": MM.config.current_site.userid,
+							"component": "user",
+							"filearea": "draft",
+							"itemid": itemId,
+							"filepath": filePath,
+							"filename": fileName,
+							"filecontent": file.split("base64,")[1]
+						};
+						
+						MM.moodleWSCall('core_files_upload', params, function(file){	
+							currentFileNum += 1;
+							if(itemId == -1){
+								MM.plugins.grading.updateGradingInfo(gradingInfo.attributes.courseId,gradingInfo.attributes.cmId,gradingInfo.attributes.userId,gradingInfo.attributes.status,gradingInfo.attributes.grade,gradingInfo.attributes.comment,file.itemid);
 							}
-							
-							
-							
-							//Ajoute tous les éléments de notation :
-							grades[elems] = {
-								userid: currentSub.userid,
-								grade: gradingInfo.attributes.grade,
-								attemptnumber: -1,
-								addattempt: 0,
-								workflowstate: "",
-								plugindata: {
-									assignfeedbackcomments_editor: {
-										text: gradingInfo.attributes.comment,
-										format: 4,
-									},
-									files_filemanager: itemId
-								}
-								
-							}
-							elems +=1;
+							MM.plugins.grading.sendFeedBack(assignId, courseId, cmId, submissions, currentSubNum, currentFileNum, grades, errors);
+	
+						},null,function(error){
+							currentFileNum += 1;
+							errors.push(currentFile);
+							MM.plugins.grading.sendFeedBack(assignId, courseId, cmId, submissions, currentSubNum, currentFileNum, grades, errors);
 						});
-					
-						if(grades != null && grades.length > 0) {
-							var params = {
-								assignmentid: assignId,
-								applytoall: 0,
-								grades : grades
-							};
-							MM.moodleWSCall('mod_assign_save_grades', params, function(e){
-									alert('ok');
-								},null,function(error){
-									alert('pas ok');
-								});
-										
+					});
+				}
+				else if(localFiles.length  == currentFileNum){
+					currentFileNum = 0;
+					grades[currentSubNum] = {
+						userid: currentSub.userid,
+						grade: gradingInfo.attributes.grade,
+						attemptnumber: -1,
+						addattempt: 0,
+						workflowstate: "", //Published
+						plugindata: {
+							assignfeedbackcomments_editor: {
+								text: gradingInfo.attributes.comment,
+								format: 4,
+							},
+							files_filemanager: itemId
 						}
 					
+					};
+					currentSubNum += 1;
+					MM.plugins.grading.sendFeedBack(assignId, courseId, cmId, submissions, currentSubNum, currentFileNum, grades, errors);
 					
-					},
-					null,
-					function (error) {
-						MM.popErrorMessage(error);
-					}
-				);
+				}
+			}		
+			
 
-	
+			else if(typeof(grades) != "undefined" && grades != null && grades.length > 0) {
+			
+				//on envoie les notes
+				
+				var params = {
+					assignmentid: assignId,
+					applytoall: 0,
+					grades : grades
+				};
+				MM.moodleWSCall('mod_assign_save_grades', params, function(e){
+						alert('ok');
+					},null,function(error){
+						alert('pas ok');
+					});
+		
 			}
-
 		},
 		
-		sendLocalSubmissionsFilesinDraft: function(assign,localFiles,userId, itemId){
-			var itemId = -1 || itemId;
+	/*	
+		uploadSubmissionsFiles(submissions, courseId, cmId){
+			if(typeof(submissions) != "undefined" && submissions.length > 0){
+			    submissions.forEach(function(submission) {
+					var localFiles = MM.plugins.grading._getLocalSubmissionFiles(submission);
+					var gradingInfo = MM.db.get("grading_infos", courseId+"_"+cmId+"_"+submission.userid);
+					
+					//Si il y a des fichiers
+					if(typeof(localFiles) != "undefined" && localFiles.length > 0){
+						//on upload le premier fichier
+						var currentFile  = localFiles[0];
+						var filePath = currentFile.localpath.replace("filesystem:file:///persistent/", "");
+						filePath =  decodeURI(decodeURI(filePath));
+						MM.fs.findFileAndGetContentsIn64(filePath, function(file){
+						
+							var beginRange = currentFile.filepath.lastIndexOf('/')+1; // Plus 1 car on ne veut pas le '/'. 
+							var endRange = currentFile.filepath.length; 
+							var fileName = currentFile.filepath.substring(beginRange, endRange); 
+							var filePath = currentFile.filepath.substring(0, beginRange); 			
+							
+							var params = {
 
+								"contextlevel": "user",
+								"instanceid": MM.config.current_site.userid,
+								"component": "user",
+								"filearea": "draft",
+								"itemid": -1,
+								"filepath": filePath,
+								"filename": fileName,
+								"filecontent": file.split("base64,")[1]
+							};
+							var needItemIdUpdate = true;
+							if(typeof(gradingInfo.attributes.itemId) != "undefined" && gradingInfo.attributes.itemId != null){
+								params.itemid  = gradingInfo.attributes.itemId;
+								needItemIdUpdate = false;
+							}
+							
+							MM.moodleWSCall('core_files_upload', params, function(file){	
+								if(needItemIdUpdate){
+									var itemId = file.itemid;
+									//On ajoute l'itemId au infos                                                                     
+									MM.plugins.grading.updateGradingInfo(gradingInfo.attributes.courseId,gradingInfo.attributes.cmId,gradingInfo.attributes.userId,gradingInfo.attributes.status,gradingInfo.attributes.grade,gradingInfo.attributes.comment,file.itemid);
+								}
+								//on upload les fichiers de la submission restants
+								MM.plugins.grading._uploadNextFiles(localFiles,1, gradingInfo.attributes.itemId);
+		
+							},null,function(error){
+								if(needItemIdUpdate){
+								//on lance l'upload de la suite sans itemId
+									MM.plugins.grading._uploadNextFilesWithoutItemId(localFiles,1,courseId, cmId, submission.userid);
+								}else {
+									MM.plugins.grading._uploadNextFiles(localFiles,1, gradingInfo.attributes.itemId);
+								}
+							});
+						},function(e){
+						alert("2");
+				});
+					}
+						
+                });
+			}
 			
-				//envoyer chaque localFile
-				_.each(localFiles, function(currentFile){
+		},
+		
+		sendFeedBack: function(submissions, courseId, cmId, assignId){
+			if(typeof(submissions) != "undefined" && submissions.length > 0){
+				for(currentSubNumber in submissions){
+					var gradingInfo = MM.db.get("grading_infos", courseId+"_"+cmId+"_"+submissions[currentSubNumber].userid);
+					if(typeof(gradingInfo) != "undefined" && gradingInfo != null){
+						grades[currentSubNumber] = {
+							userid: currentSub.userid,
+							grade: gradingInfo.attributes.grade,
+							attemptnumber: -1,
+							addattempt: 0,
+							workflowstate: "",
+							plugindata: {
+								assignfeedbackcomments_editor: {
+									text: gradingInfo.attributes.comment,
+									format: 4,
+								},
+								files_filemanager: gradingInfo.attributes.itemId
+							}
+							
+						}
+					}
+				}	
+			
+				if(typeof(grades) != "undefined" && grades != null && grades.length > 0) {
+				
+					//on envoie les notes
+					
+					var params = {
+						assignmentid: assignId,
+						applytoall: 0,
+						grades : grades
+					};
+					MM.moodleWSCall('mod_assign_save_grades', params, function(e){
+							alert('ok');
+						},null,function(error){
+							alert('pas ok');
+						}
+					);
+			
+				}
+			}
+		},
+		
+		_uploadNextFiles: function(localFiles, currentFileNumber, itemId){
+			if(localFiles.length > currentFileNumber && typeof(localFiles[currentFileNumber]) != "undefined"){
+				var currentFile  = localFiles[currentFileNumber];
+				var filePath = currentFile.localpath.replace("filesystem:file:///persistent/", "");
+				filePath =  decodeURI(decodeURI(filePath));
+				MM.fs.findFileAndGetContentsIn64(filePath, function(file){
+				
+					var beginRange = currentFile.filepath.lastIndexOf('/')+1; // Plus 1 car on ne veut pas le '/'. 
+					var endRange = currentFile.filepath.length; 
+					var fileName = currentFile.filepath.substring(beginRange, endRange); 
+					var filePath = currentFile.filepath.substring(0, beginRange); 			
+					
+					var params = {
+
+						"contextlevel": "user",
+						"instanceid": MM.config.current_site.userid,
+						"component": "user",
+						"filearea": "draft",
+						"itemid": itemId,
+						"filepath": filePath,
+						"filename": fileName,
+						"filecontent": file.split("base64,")[1]
+					};
+					
+					MM.moodleWSCall('core_files_upload', params, function(file){	
+
+						//on upload les fichiers de la submission restants
+						MM.plugins.grading._uploadNextFiles(localFiles,currentFileNumber+1, itemId);
+
+					},null,function(error){
+						
+						//on lance l'upload de la suite sans itemId
+						MM.plugins.grading._uploadNextFiles(localFiles,currentFileNumber+1,itemId);
+					});
+				},function(e){
+						alert("2");
+				});
+		
+			}
+		},
+		
+		_uploadNextFilesWithoutItemId: function(localFiles, currentFileNumber, courseId, cmId, userId){
+			if(localFiles.length > currentFileNumber && typeof(loclaFiles[currentFileNumber]) != "undefined"){
+				var currentFile  = localFiles[currentFileNumber];
+				var filePath = currentFile.localpath.replace("filesystem:file:///persistent/", "");
+				filePath =  decodeURI(decodeURI(filePath));
+				MM.fs.findFileAndGetContentsIn64(filePath, function(file){
+				
+					var beginRange = currentFile.filepath.lastIndexOf('/')+1; // Plus 1 car on ne veut pas le '/'. 
+					var endRange = currentFile.filepath.length; 
+					var fileName = currentFile.filepath.substring(beginRange, endRange); 
+					var filePath = currentFile.filepath.substring(0, beginRange); 			
+					
+					var params = {
+
+						"contextlevel": "user",
+						"instanceid": MM.config.current_site.userid,
+						"component": "user",
+						"filearea": "draft",
+						"itemid": -1,
+						"filepath": filePath,
+						"filename": fileName,
+						"filecontent": file.split("base64,")[1]
+					};
+					
+
+					
+					MM.moodleWSCall('core_files_upload', params, function(file){	
+						
+							var itemId = file.itemid;
+							//On ajoute l'itemId au infos  
+							var gradingInfo = MM.db.get("grading_infos", courseId+"_"+cmId+"_"+submission.userid);
+							MM.plugins.grading.updateGradingInfo(gradingInfo.attributes.courseId,gradingInfo.attributes.cmId,gradingInfo.attributes.userId,gradingInfo.attributes.status,gradingInfo.attributes.grade,gradingInfo.attributes.comment,file.itemid);
+						
+						//on upload les fichiers de la submission restants
+						MM.plugins.grading._uploadNextFiles(localFiles,currentFileNumber+1, itemId);
+
+					},null,function(error){
+						
+						//on lance l'upload de la suite sans itemId
+						MM.plugins.grading._uploadNextFilesWithoutItemId(localFiles,currentFileNumber+1,courseId, cmId, submission.userid);
+					});
+				},function(e){
+						alert("2");
+				});
+		
+			}
+		},
+		
+	
+		
+		sendFeedBack: function(courseId, cmId, assignId, submissions, currentSubNumber, grades, nbError){
+			var grades = grades || [];
+			var currentSubNumber = currentSubNumber || 0;
+			//var nbError = nbError || 0;
+			
+			//tant que la variable grades n'est pas complété
+			if(typeof(submissions) != "undefined" && submissions.length > 0 && currentSubNumber < submissions.length){
+				var currentSub = submissions[currentSubNumber];
+				var localFiles = MM.plugins.grading._getLocalSubmissionFiles(currentSub);
+				
+				
+				var gradingInfo = MM.db.get("grading_infos", courseId+"_"+cmId+"_"+currentSub.userid);
+				
+				//si la submission à des fichiers et que on ne connais pas l'itemId
+				if(typeof(gradingInfo.attributes.itemId) != "undefined" && gradingInfo.attributes.itemId == null && typeof(localFiles) != "undefined" && localFiles.length > 0){
+					
+					//on upload le premier fichier
+					var currentFile  = localFiles[0];
 					var filePath = currentFile.localpath.replace("filesystem:file:///persistent/", "");
+					filePath =  decodeURI(decodeURI(filePath));
 					MM.fs.findFileAndGetContentsIn64(filePath, function(file){
 					
 						var beginRange = currentFile.filepath.lastIndexOf('/')+1; // Plus 1 car on ne veut pas le '/'. 
@@ -1063,7 +1249,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 							"instanceid": MM.config.current_site.userid,
 							"component": "user",
 							"filearea": "draft",
-							"itemid": itemId,
+							"itemid": -1,
 							"filepath": filePath,
 							"filename": fileName,
 							"filecontent": file.split("base64,")[1]
@@ -1074,21 +1260,149 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 						
 						MM.moodleWSCall('core_files_upload', params, function(file){			
 							var itemId = file.itemid;
-							var gradingInfo = MM.db.get("grading_infos", assign.course+"_"+assign.cmid+"_"+userId);
-							if(gradingInfo){
-								MM.plugins.grading.updateGradingInfo(gradingInfo.attributes.courseId,gradingInfo.attributes.moduleId,gradingInfo.attributes.userId,gradingInfo.attributes.status,gradingInfo.attributes.grade,gradingInfo.attributes.comment,file.itemid);
-							}	
+							//On ajoute l'itemId au infos                                                                     
+							MM.plugins.grading.updateGradingInfo(gradingInfo.attributes.courseId,gradingInfo.attributes.cmId,gradingInfo.attributes.userId,gradingInfo.attributes.status,gradingInfo.attributes.grade,gradingInfo.attributes.comment,file.itemid);
 							
+							//on remplit la variable grades
+							grades[currentSubNumber] = {
+								userid: currentSub.userid,
+								grade: gradingInfo.attributes.grade,
+								attemptnumber: -1,
+								addattempt: 0,
+								workflowstate: "",
+								plugindata: {
+									assignfeedbackcomments_editor: {
+										text: gradingInfo.attributes.comment,
+										format: 4,
+									},
+									files_filemanager: itemId
+								}
+								
+							}
+							
+							//Récurence
+							currentSubNumber += 1;
+							MM.plugins.grading.sendFeedBack(courseId, cmId, assignId, submissions, currentSubNumber, grades);
+							
+							//on upload les fichiers de la submission restants
+							
+							var i = 1;
+							while(i < localFiles.length){
+								currentFile = localFiles[i];
+								MM.plugins.grading.sendLocalSubmissionsFilesinDraft(currentFile, itemId);
+								i+=1;
+							}
+	
 						},null,function(error){
-							
+							alert("1");
 						});
-						
-						
 					}, function(e){
-						
+						alert("2");
 					});
+
+					
+					
+				}
 				
+				
+				
+				
+				
+				//Sinon
+				else {
+					//on remplit la variable grades
+					grades[currentSubNumber] = {
+						userid: currentSub.userid,
+						grade: gradingInfo.attributes.grade,
+						attemptnumber: -1,
+						addattempt: 0,
+						workflowstate: "",
+						plugindata: {
+							assignfeedbackcomments_editor: {
+								text: gradingInfo.attributes.comment,
+								format: 4,
+							},
+							files_filemanager: gradingInfo.attributes.itemId
+						}
+						
+					}
+					
+					//Récurence
+					currentSubNumber += 1;
+					MM.plugins.grading.sendFeedBack(courseId, cmId,assignId, submissions, currentSubNumber, grades);
+					
+					//On upload les fichiers.
+					if(typeof(localFiles) != "undefined" && localFiles.length > 0){
+						var i = 0;
+						while(i < localFiles.length){
+							currentFile = localFiles[i];
+							MM.plugins.grading.sendLocalSubmissionsFilesinDraft(currentFile, gradingInfo.attributes.itemId);
+							i+=1;
+						}
+					}
+				}
+				
+			}
+			
+			//Si on a parcourt toute les sub et que la variable grades à été complété
+			else if(typeof(grades) != "undefined" && grades != null && grades.length > 0) {
+			
+				//on envoie les notes
+				
+				var params = {
+					assignmentid: assignId,
+					applytoall: 0,
+					grades : grades
+				};
+				MM.moodleWSCall('mod_assign_save_grades', params, function(e){
+						alert('ok');
+					},null,function(error){
+						alert('pas ok');
+					});
+		
+			}
+		},
+		
+		
+		sendLocalSubmissionsFilesinDraft: function(currentFile, itemId){
+			var itemId = itemId || -1;
+
+
+			var filePath = currentFile.localpath.replace("filesystem:file:///persistent/", "");
+			MM.fs.findFileAndGetContentsIn64(filePath, function(file){
+			
+				var beginRange = currentFile.filepath.lastIndexOf('/')+1; // Plus 1 car on ne veut pas le '/'. 
+				var endRange = currentFile.filepath.length; 
+				var fileName = currentFile.filepath.substring(beginRange, endRange); 
+				var filePath = currentFile.filepath.substring(0, beginRange); 
+				
+				
+				var params = {
+
+					"contextlevel": "user",
+					"instanceid": MM.config.current_site.userid,
+					"component": "user",
+					"filearea": "draft",
+					"itemid": itemId,
+					"filepath": filePath,
+					"filename": fileName,
+					"filecontent": file.split("base64,")[1]
+					
+				};
+
+				
+				
+				MM.moodleWSCall('core_files_upload', params, function(file){			
+					
+				},null,function(error){
+					
 				});
+				
+				
+			}, function(e){
+				
+			});
+
 			
 			
 		},
@@ -1105,14 +1419,17 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
             }
             // Find local path of files.
             if (files.length > 0) {
+				var localFiles = [];
                 for (var el in files) {
                     var file = files[el];
-					var localFiles = [];
                     var uniqueId = MM.config.current_site.id + "-" + hex_md5(file.fileurl);
                     var path = MM.db.get("assign_files", uniqueId);
+					var fileWithLocalPath;
                     if (path) {
-					localFiles[el] = file;
-                        localFiles[el].localpath = path.get("localpath");
+						fileWithLocalPath = file;
+						fileWithLocalPath.localpath =  path.get("localpath");
+						localFiles.push(fileWithLocalPath);
+                        
                     }
                 }
             }
@@ -1136,10 +1453,10 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 		},
 		
 		newGrade: function(courseId,cmId,userId) {
-			var result;
+			var result = -1;
 			var grade = $("#feedback_grade").val();
 			if(grade.trim() == ""){
-				result = null;
+				result = -1;
 			}
 			else{
 				grade = parseFloat(grade);
@@ -1165,10 +1482,10 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 		},
 		
 		getFeedBackItemId: function(courseId, cmId, userId){
-			var itemId;
+			var itemId = null;
 			var gradingInfo = MM.db.get("grading_infos", courseId+"_"+cmId+"_"+userId);
 			
-				if(gradingInfo){
+				if(gradingInfo && typeof(gradingInfo.attributes.itemId) != "undefined"){
 					itemId = gradingInfo.attributes.itemId;
 				}
 			return itemId;
