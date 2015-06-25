@@ -397,6 +397,14 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 				}
 			};	
 			
+			//syncData pour conserver les information et pouvoir les transmettres au bouton synchroniser
+			var syncData = {
+				'assignid': null,
+				'courseid': courseId,
+				'cmid': cmId,
+				'submissions': null
+			};
+			
 			var params = {
                 "courseids[0]": courseId
             };
@@ -412,6 +420,8 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
                         }
                     });
                     if (currentAssign) {
+						syncData.assignid = currentAssign.id;
+
 						var date ={}
 						date.duedate = currentAssign.duedate;
 						date.allowsubmissionsfromdate = currentAssign.allowsubmissionsfromdate;
@@ -453,7 +463,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 								var gradingInfos = MM.db.where("grading_infos", {courseId: parseInt(courseId), cmId: parseInt(cmId)} );
 								if(gradingInfos.length > 0){
 									_.each(gradingInfos, function(gradingInfo) {
-										if (gradingInfo.attributes.grade) {
+										if (typeof(gradingInfo.attributes.grade) != "undefined" && gradingInfo.attributes.grade != null && gradingInfo.attributes.grade >=0  ) {
 											if(tpl.grading.nbGrades == 0){
 												grades.moy = gradingInfo.attributes.grade;
 												grades.min = gradingInfo.attributes.grade;
@@ -467,10 +477,10 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 												tpl.grading.nbGrades += 1;
 											}
 										}
-										if(gradingInfo.attributes.comment && gradingInfo.attributes.comment != ""){
+										if(gradingInfo.attributes.comment != null && gradingInfo.attributes.comment != ""){
 											tpl.grading.nbComments +=1;
 										}
-										if(gradingInfo.attributes.status && gradingInfo.attributes.status == "ended")
+										if(gradingInfo.attributes.status !=null && gradingInfo.attributes.status == "ended")
 											EndedGrading += 1;
 									});
 									
@@ -491,6 +501,8 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 										// Stops loading...
 										$("#info-" + currentAssign.cmid, "#panel-right").attr("src", "img/info.png");
 
+										syncData.submissions = result.assignments[0].submissions;
+										
 										var sectionName = "";
 										if (MM.plugins.assign.sectionsCache[currentAssign.cmid]) {
 											sectionName = MM.plugins.assign.sectionsCache[currentAssign.cmid];
@@ -535,7 +547,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 										
 										//then render page
 										
-										MM.plugins.grading._renderAdminPage(tpl, pageTitle);
+										MM.plugins.grading._renderAdminPage(tpl, pageTitle, syncData);
 																						
 									},
 									null,
@@ -562,7 +574,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 		},
 		
 		
-        _renderAdminPage: function(tpl, pageTitle) {		
+        _renderAdminPage: function(tpl, pageTitle, syncData) {	
 			var html = MM.tpl.render(MM.plugins.grading.templates.adminPage.html, tpl);
 			MM.panels.show('right', html, {title: pageTitle});
 			
@@ -573,10 +585,29 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 				if(MM.deviceConnected()){
 					var sendWay = $("input[type=radio][name=send]:checked").val();
 					if(sendWay== "ended"){
-						MM.popConfirm("Confirmez-vous la syncronisation de toutes les corrections terminées ?<br/>(Les étudiants concernés pourrons consulter leurs corrections)", function(){} ,null );
+						MM.popConfirm("Confirmez-vous la syncronisation de toutes les corrections terminées ?<br/>(Les étudiants concernés pourrons consulter leurs corrections)", function(){
+							var gradingInfos = MM.db.where("grading_infos", {courseId: parseInt(syncData.courseid), cmId: parseInt(syncData.cmid), status: "ended"} );
+							var submissionsToSync = [];
+							if(gradingInfos.length > 0){
+								
+								_.each(gradingInfos, function(gradingInfo) {
+									_.each(syncData.submissions, function(submission) {
+										if(submission.userid == gradingInfo.attributes.userId){
+											submissionsToSync[submissionsToSync.length] = submission;
+										}
+									});
+								});
+							}
+							 MM.plugins.grading.sendFeedBack(syncData.assignid, syncData.courseid, syncData.cmid, submissionsToSync);
+							
+					
+						} ,null );
 					}
+					
 					else if(sendWay== "all"){
-						MM.popConfirm("Confirmez vous la syncronisation de toutes les corrections ? <br/>(Les étudiants concernés pourrons consulter leurs corrections)", function(){} ,null );
+						MM.popConfirm("Confirmez vous la syncronisation de toutes les corrections ? <br/>(Les étudiants concernés pourrons consulter leurs corrections)", function(){
+							MM.plugins.grading.sendFeedBack(syncData.assignid, syncData.courseid, syncData.cmid, syncData.submissions);		
+						} ,null );
 					}
 				}
 				else{
@@ -904,17 +935,17 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 				if(MM.deviceConnected()){
 	
 					MM.popConfirm("Confirmez-vous la syncronisation ?<br/>(L'étudiant concerné pourra consulter la correction)",function(){ 
-					var courseId = data.assign.course;
-					var cmId = data.assign.cmid;
-					var assignId = data.assign.id;
-					var currentSub = [];
-					_.each(data.submissions, function(submission) {
-						if(submission.userid == data.user.userid){
-							currentSub[0] = submission;
-						}
-					});
-					
-					MM.plugins.grading.sendFeedBack(assignId, courseId, cmId, currentSub);
+						var courseId = data.assign.course;
+						var cmId = data.assign.cmid;
+						var assignId = data.assign.id;
+						var submissionToSync = [];
+						_.each(data.submissions, function(submission) {
+							if(submission.userid == data.user.userid){
+								submissionToSync[0] = submission;
+							}
+						});
+						
+						MM.plugins.grading.sendFeedBack(assignId, courseId, cmId, submissionToSync);
 						
 					},null );
 					
@@ -930,22 +961,27 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 			var grades = grades || [];
 			var errors = errors ||[];
 			
+			//tant que l'on a pas parcourru toute les submissions
 			if(typeof(submissions) != "undefined" && submissions.length > 0 && currentSubNum < submissions.length){
 				var currentSub = submissions[currentSubNum];
 				var localFiles = MM.plugins.grading._getLocalSubmissionFiles(currentSub);
 				var gradingInfo = MM.db.get("grading_infos", courseId+"_"+cmId+"_"+currentSub.userid);
 				var itemId = -1;
-				if(gradingInfo.attributes.itemId != null){
+				
+				
+				if(typeof(gradingInfo) != "undefined" && gradingInfo.attributes.itemId != null){
 					itemId = gradingInfo.attributes.itemId;
 				}
 				
+				//tant que on a pas parcourru tous les fichiers de la currentSub
 				if(localFiles.length > currentFileNum){
 					var currentFile = localFiles[currentFileNum];
 					
 
 					var filePath = currentFile.localpath.replace("filesystem:file:///persistent/", "");
-					filePath =  decodeURI(decodeURI(filePath));
+					filePath =  decodeURI(filePath); 
 					MM.fs.findFileAndGetContentsIn64(filePath, function(file){
+					
 					
 						var beginRange = currentFile.filepath.lastIndexOf('/')+1; // Plus 1 car on ne veut pas le '/'. 
 						var endRange = currentFile.filepath.length; 
@@ -966,42 +1002,62 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 						
 						MM.moodleWSCall('core_files_upload', params, function(file){	
 							currentFileNum += 1;
+							
+							//Si itemId inconnu, on enregistre le nouveau
 							if(itemId == -1){
-								MM.plugins.grading.updateGradingInfo(gradingInfo.attributes.courseId,gradingInfo.attributes.cmId,gradingInfo.attributes.userId,gradingInfo.attributes.status,gradingInfo.attributes.grade,gradingInfo.attributes.comment,file.itemid);
+								var updateStatus = gradingInfo.attributes.status || null;
+								var updateGrade = gradingInfo.attributes.grade || -1;
+								var updateComment = gradingInfo.attributes.comment || "";
+								MM.plugins.grading.updateGradingInfo(courseId,cmId,currentSub.userid,updateStatus,updateGrade,updateComment,file.itemid);
 							}
 							MM.plugins.grading.sendFeedBack(assignId, courseId, cmId, submissions, currentSubNum, currentFileNum, grades, errors);
 	
 						},null,function(error){
 							currentFileNum += 1;
+							//on enregistre l'erreur et on passe au suivant
 							errors.push(currentFile);
 							MM.plugins.grading.sendFeedBack(assignId, courseId, cmId, submissions, currentSubNum, currentFileNum, grades, errors);
 						});
 					});
 				}
+				
+				//si on vient de finir UNE submission 
 				else if(localFiles.length  == currentFileNum){
-					currentFileNum = 0;
-					grades[currentSubNum] = {
-						userid: currentSub.userid,
-						grade: gradingInfo.attributes.grade,
-						attemptnumber: -1,
-						addattempt: 0,
-						workflowstate: "", //Published
-						plugindata: {
-							assignfeedbackcomments_editor: {
-								text: gradingInfo.attributes.comment,
-								format: 4,
-							},
-							files_filemanager: itemId
-						}
+					//si il y a quelque chose a sauvegarder
+					if((currentFileNum > 0 || (typeof(gradingInfo) != "undefined" && gradingInfo.attributes.grade != null && gradingInfo.attributes.grade >=0) ||  (typeof(gradingInfo) != "undefined" && gradingInfo.attributes.comment != null && gradingInfo.attributes.grade != "") )){
+						//on enregistre les info de la submission dans grades
+						currentFileNum = 0;
+						var newGrade;
+						if(typeof(gradingInfo)!= "undefined" && gradingInfo.attributes.grade !=null && gradingInfo.attributes.grade >=0) newGrade = gradingInfo.attributes.grade;
+						else newGrade = -1;
+						var newComment = gradingInfo.attributes.comment || "";
+						if(itemId == -1) itemId = null;
+						
+						grades[grades.length] = {
+							userid: currentSub.userid,
+							grade: newGrade,
+							attemptnumber: -1,
+							addattempt: 0,
+							workflowstate: "", //Published
+							plugindata: {
+								assignfeedbackcomments_editor:{
+									text : newComment,
+									format: 4
+								},
+								files_filemanager: itemId
+							}
+						
+						};
+					}
 					
-					};
+					//on passe a la submission suivante
 					currentSubNum += 1;
 					MM.plugins.grading.sendFeedBack(assignId, courseId, cmId, submissions, currentSubNum, currentFileNum, grades, errors);
 					
 				}
 			}		
 			
-
+			//lorsque l'upload est fini, on envoi grades
 			else if(typeof(grades) != "undefined" && grades != null && grades.length > 0) {
 			
 				//on envoie les notes
@@ -1012,11 +1068,21 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 					grades : grades
 				};
 				MM.moodleWSCall('mod_assign_save_grades', params, function(e){
-						alert('ok');
+						var message = "Synchronisation éffectuée avec succes !";
+						if(errors.length > 0){
+							message = "Synchronsation terminée. Certains fichier n'ont pas pu être envoyés"
+						};
+						//possibilité de donner le nom des fichier non transmis...
+						
+						MM.popMessage(message);
+						
 					},null,function(error){
-						alert('pas ok');
+						MM.popErrorMessage("Echec de la synchronisation");
 					});
 		
+			}
+			else{
+				MM.popMessage("Rien à synchroniser");
 			}
 		},
 		
@@ -1413,6 +1479,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 		
 		_getLocalSubmissionFiles: function(submission) {
             var files = [];
+			var localFiles = [];
             if (submission.plugins) {
                 submission.plugins.forEach(function(plugin) {
                     if (plugin.type == 'file' && plugin.fileareas && plugin.fileareas[0] && plugin.fileareas[0].files) {
@@ -1422,7 +1489,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
             }
             // Find local path of files.
             if (files.length > 0) {
-				var localFiles = [];
+				
                 for (var el in files) {
                     var file = files[el];
                     var uniqueId = MM.config.current_site.id + "-" + hex_md5(file.fileurl);
