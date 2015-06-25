@@ -1025,7 +1025,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 				//si on vient de finir UNE submission 
 				else if(localFiles.length  == currentFileNum){
 					//si il y a quelque chose a sauvegarder
-					if((currentFileNum > 0 || (typeof(gradingInfo) != "undefined" && gradingInfo.attributes.grade != null && gradingInfo.attributes.grade >=0) ||  (typeof(gradingInfo) != "undefined" && gradingInfo.attributes.comment != null && gradingInfo.attributes.grade != "") )){
+					if((currentFileNum > 0 || (typeof(gradingInfo) != "undefined" && gradingInfo.attributes.grade != null && gradingInfo.attributes.grade >=0) ||  (typeof(gradingInfo) != "undefined" && gradingInfo.attributes.comment != null && gradingInfo.attributes.comment != "") )){
 						//on enregistre les info de la submission dans grades
 						currentFileNum = 0;
 						var newGrade;
