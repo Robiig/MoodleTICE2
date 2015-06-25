@@ -1032,7 +1032,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 						if(typeof(gradingInfo)!= "undefined" && gradingInfo.attributes.grade !=null && gradingInfo.attributes.grade >=0) newGrade = gradingInfo.attributes.grade;
 						else newGrade = -1;
 						var newComment = gradingInfo.attributes.comment || "";
-						if(itemId == -1) itemId = null;
+						
 						
 						grades[grades.length] = {
 							userid: currentSub.userid,
