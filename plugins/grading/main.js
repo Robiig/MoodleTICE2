@@ -857,6 +857,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
                 MM.plugins.assign._downloadFile(url, filename, attachmentId,true);
             });
 
+			
             // View submission texts.
             $(".submissiontext", "#panel-right").on(MM.clickType, function(e) {
                 e.preventDefault();
@@ -955,7 +956,7 @@ define(templates,function (gradingPageTpl,gradingFormTpl,participantsTpl,partici
 			});
         },
 		
-		sendFeedBack(assignId,courseId, cmId, submissions, currentSubNum, currentFileNum, grades, errors){
+		sendFeedBack: function(assignId,courseId, cmId, submissions, currentSubNum, currentFileNum, grades, errors){
 			var currentSubNum = currentSubNum || 0;
 			var currentFileNum = currentFileNum ||0;
 			var grades = grades || [];
